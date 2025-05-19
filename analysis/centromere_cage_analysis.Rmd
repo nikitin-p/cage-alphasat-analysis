@@ -1,0 +1,1944 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(purrr)
+library(broom)
+library(scales)
+library(stringr)
+library(tibble)
+library(readr)
+library(RColorBrewer)
+library(colorRamp2)
+library(circlize)
+library(ComplexHeatmap)
+library(fuzzyjoin)
+```
+
+#
+93 MCF7_mapping_histogram.tsv
+91 HeLaS3_mapping_histogram.tsv
+83 H9hESC_mapping_histogram.tsv
+61 HepG2_mapping_histogram.tsv
+50 K562_mapping_histogram.tsv
+35 BCell_mapping_histogram.tsv
+11 FANTOM6DermalFibroblasts_mapping_histogram.tsv
+11 VillousMesenchymeAniso2_mapping_histogram.tsv
+10 OsteoblastAniso2_mapping_histogram.tsv
+9 CD14PositiveMonocyte_mapping_histogram.tsv
+8 OsteoblastAniso1_mapping_histogram.tsv
+7 FibroblastDermisAniso1_mapping_histogram.tsv
+6 VillousMesenchymeAniso1_mapping_histogram.tsv
+5 ErythroidProgenitor_mapping_histogram.tsv
+5 FANTOM6DermalLymphaticVascularEndothelialCells_mapping_histogram.tsv
+5 SkeletalMuscleSatelliteAniso2_mapping_histogram.tsv
+4 BronchialSmoothMuscleCells_mapping_histogram.tsv
+4 FibroblastDermisAniso2_mapping_histogram.tsv
+4 KeratinocyteProgenitor_mapping_histogram.tsv
+3 FANTOM6DermalBloodVascularEndothelialCells_mapping_histogram.tsv
+3 GM12878_mapping_histogram.tsv
+2 HematopoieticProgenitor_mapping_histogram.tsv
+2 KeratinocyteFemale_mapping_histogram.tsv
+2 UmbilicalVeinCytosolicFraction_mapping_histogram.tsv
+1 ArticularChondrocyteKneeJoint_mapping_histogram.tsv
+1 MyeloidProgenitor_mapping_histogram.tsv
+1 SkeletalMuscleSatelliteAniso1_mapping_histogram.tsv
+#
+
+```{r}
+#mapping.histogram.path = './MCF7_mapping_histogram.tsv'
+mapping.histogram.path = './HeLaS3_mapping_histogram.tsv'
+#mapping.histogram.path = './HepG2_mapping_histogram.tsv'
+#mapping.histogram.path = './K562_mapping_histogram.tsv'
+#mapping.histogram.path = './BCell_mapping_histogram.tsv'
+#mapping.histogram.path = './FANTOM6DermalFibroblasts_mapping_histogram.tsv'
+#mapping.histogram.path = './VillousMesenchymeAniso2_mapping_histogram.tsv'
+#mapping.histogram.path = './OsteoblastAniso2_mapping_histogram.tsv'
+#mapping.histogram.path = './CD14PositiveMonocyte_mapping_histogram.tsv'
+mapping.histogram = read.delim(mapping.histogram.path, header = F,  sep="\t", stringsAsFactors = F)
+mapping.histogram["V1"] = mapping.histogram["V1"] + 1
+```
+
+```{r}
+ggplot(mapping.histogram, aes(x = V1)) +
+  theme_classic() +
+  geom_histogram(binwidth = 5,
+                 fill = "#00BFC4",
+                 color = "#00BFC4") +
+  labs(title = "Number of alignments for centromeric reads",
+       x = "Frequency",
+       y = "Count") #+
+  #scale_y_log10() +
+  #theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+```{r}
+dinucleotide.table.1 = read.delim('./K562_dinucleotide_table.tsv', header = T,  sep="\t", stringsAsFactors = F) %>%
+  filter(!(dinucleotide %in% c("AN", "CN", "GN", "TN"))) %>%
+  rename_with(~ paste0("K562_", .), -dinucleotide)
+dinucleotide.table.2 = read.delim('./MCF7_dinucleotide_table.tsv', header = T,  sep="\t", stringsAsFactors = F) %>%
+  filter(!(dinucleotide %in% c("AN", "CN", "GN", "TN"))) %>%
+  rename_with(~ paste0("MCF7_", .), -dinucleotide)
+dinucleotide.table.3 = read.delim('./HeLaS3_dinucleotide_table.tsv', header = T,  sep="\t", stringsAsFactors = F) %>%
+  filter(!(dinucleotide %in% c("AN", "CN", "GN", "TN"))) %>%
+  rename_with(~ paste0("HeLaS3_", .), -dinucleotide)
+dinucleotide.table.4 = read.delim('./HepG2_dinucleotide_table.tsv', header = T,  sep="\t", stringsAsFactors = F) %>%
+  filter(!(dinucleotide %in% c("AN", "CN", "GN", "TN"))) %>%
+  rename_with(~ paste0("HepG2_", .), -dinucleotide)
+dinucleotide.table.5 = read.delim('./BCell_dinucleotide_table.tsv', header = T,  sep="\t", stringsAsFactors = F) %>%
+  filter(!(dinucleotide %in% c("AN", "CN", "GN", "TN"))) %>%
+  rename_with(~ paste0("BCell_", .), -dinucleotide)
+dinucleotide.table.6 = read.delim('./FANTOM6DermalLymphaticVascularEndothelialCells_dinucleotide_table.tsv', header = T,  sep="\t", stringsAsFactors = F) %>%
+  filter(!(dinucleotide %in% c("AN", "CN", "GN", "TN"))) %>%
+  rename_with(~ paste0("DermalLymphaticVascularEndothelial_", .), -dinucleotide)
+dinucleotide.table.7 = read.delim('./VillousMesenchymeAniso2_dinucleotide_table.tsv', header = T,  sep="\t", stringsAsFactors = F) %>%
+  filter(!(dinucleotide %in% c("AN", "CN", "GN", "TN"))) %>%
+  rename_with(~ paste0("VillousMesenchyme_", .), -dinucleotide)
+dinucleotide.table.8 = read.delim('./MyeloidProgenitor_dinucleotide_table.tsv', header = T,  sep="\t", stringsAsFactors = F) %>%
+  filter(!(dinucleotide %in% c("AN", "CN", "GN", "TN"))) %>%
+  rename_with(~ paste0("MyeloidProgenitor_", .), -dinucleotide)
+dinucleotide.table.9 = read.delim('./CD14PositiveMonocyte_dinucleotide_table.tsv', header = T,  sep="\t", stringsAsFactors = F) %>%
+  filter(!(dinucleotide %in% c("AN", "CN", "GN", "TN"))) %>%
+  rename_with(~ paste0("CD14Monocyte_", .), -dinucleotide)
+dinucleotide.table.10 = read.delim('./H9hESC_dinucleotide_table.tsv', header = T,  sep="\t", stringsAsFactors = F) %>%
+  filter(!(dinucleotide %in% c("AN", "CN", "GN", "TN"))) %>%
+  rename_with(~ paste0("H9hESC_", .), -dinucleotide)
+dinucleotide.table.11 = read.delim('./GM12878_dinucleotide_table.tsv', header = T,  sep="\t", stringsAsFactors = F) %>%
+  filter(!(dinucleotide %in% c("AN", "CN", "GN", "TN"))) %>%
+  rename_with(~ paste0("GM12878_", .), -dinucleotide)
+
+dinucleotide.table = dinucleotide.table.1 %>%
+  left_join(dinucleotide.table.2, by = join_by(dinucleotide)) %>%
+  left_join(dinucleotide.table.3, by = join_by(dinucleotide)) %>%
+  left_join(dinucleotide.table.4, by = join_by(dinucleotide))  %>%
+  left_join(dinucleotide.table.5, by = join_by(dinucleotide))  %>%
+  left_join(dinucleotide.table.6, by = join_by(dinucleotide))  %>%
+  left_join(dinucleotide.table.7, by = join_by(dinucleotide))  %>%
+  left_join(dinucleotide.table.8, by = join_by(dinucleotide))  %>%
+  left_join(dinucleotide.table.9, by = join_by(dinucleotide))  %>%
+  left_join(dinucleotide.table.10, by = join_by(dinucleotide)) %>%
+  left_join(dinucleotide.table.11, by = join_by(dinucleotide))   
+```
+
+```{r}
+files = c(
+  K562 = "K562_dinucleotide_table.tsv",
+  MCF7 = "MCF7_dinucleotide_table.tsv",
+  HeLaS3 = "HeLaS3_dinucleotide_table.tsv",
+  HepG2 = "HepG2_dinucleotide_table.tsv",
+  BCell = "BCell_dinucleotide_table.tsv",
+  FANTOM6DermalLymphaticVascularEndothelialCells = "FANTOM6DermalLymphaticVascularEndothelialCells_dinucleotide_table.tsv",
+  VillousMesenchymeAniso2 = "VillousMesenchymeAniso2_dinucleotide_table.tsv",
+  MyeloidProgenitor = "MyeloidProgenitor_dinucleotide_table.tsv",
+  CD14PositiveMonocyte = "CD14PositiveMonocyte_dinucleotide_table.tsv",
+  H9hESC = "H9hESC_dinucleotide_table.tsv",
+  GM12878 = "GM12878_dinucleotide_table.tsv",
+  FANTOM6DermalBloodVascularEndothelialCells = "FANTOM6DermalBloodVascularEndothelialCells_dinucleotide_table.tsv",
+  ArticularChondrocyteKneeJoint = "ArticularChondrocyteKneeJoint_dinucleotide_table.tsv",
+  BronchialSmoothMuscleCells = "BronchialSmoothMuscleCells_dinucleotide_table.tsv",
+  ErythroidProgenitor = "ErythroidProgenitor_dinucleotide_table.tsv",
+  FANTOM6DermalFibroblasts = "FANTOM6DermalFibroblasts_dinucleotide_table.tsv",
+  FibroblastDermisAniso1 = "FibroblastDermisAniso1_dinucleotide_table.tsv",
+  FibroblastDermisAniso2 = "FibroblastDermisAniso2_dinucleotide_table.tsv",
+  HematopoieticProgenitor = "HematopoieticProgenitor_dinucleotide_table.tsv",
+  KeratinocyteFemale = "KeratinocyteFemale_dinucleotide_table.tsv",
+  KeratinocyteProgenitor = "KeratinocyteProgenitor_dinucleotide_table.tsv",
+  OsteoblastAniso1 = "OsteoblastAniso1_dinucleotide_table.tsv",
+  OsteoblastAniso2 = "OsteoblastAniso2_dinucleotide_table.tsv",
+  SkeletalMuscleSatelliteAniso1 = "SkeletalMuscleSatelliteAniso1_dinucleotide_table.tsv",
+  SkeletalMuscleSatelliteAniso2 = "SkeletalMuscleSatelliteAniso2_dinucleotide_table.tsv",
+  UmbilicalVeinCytosolicFraction = "UmbilicalVeinCytosolicFraction_dinucleotide_table.tsv",
+  VillousMesenchymeAniso1 = "VillousMesenchymeAniso1_dinucleotide_table.tsv"
+)
+
+read_and_process = function(file, prefix) {
+  read.delim(file, header = TRUE, sep = "\t", stringsAsFactors = FALSE) %>%
+    filter(!dinucleotide %in% c("AN", "CN", "GN", "TN")) %>%
+    rename_with(~ paste0(prefix, "_", .), -dinucleotide)
+}
+
+dinucleotide_tables = imap(files, ~ read_and_process(.x, .y))
+
+dinucleotide.table = reduce(dinucleotide_tables, left_join, by = "dinucleotide")
+```
+
+```{r}
+m = as.matrix(sapply(dinucleotide.table[,2:ncol(dinucleotide.table)], as.numeric))
+rownames(m) = dinucleotide.table$dinucleotide
+m[is.na(m)] = 0
+#m_g0 = m[rowSums(m) > 0, ]
+m_g0 = m[, colSums(m) > 10]
+sample_names <- sapply(strsplit(colnames(m_g0), "_"), `[`, 1)
+unique_samples <- unique(sample_names)
+sample_colors <- setNames(rainbow(length(unique_samples)), unique_samples)
+ha <- rowAnnotation(
+  Sample = sample_names,
+  col = list(Sample = sample_colors)
+)
+
+col_fun = colorRamp2(c(min(m_g0), max(m_g0)/2, max(m_g0)), c("grey", "#673ab7", "#522e93"))
+fig1 = 
+  Heatmap(m_g0,
+          cluster_columns = T,
+          cluster_rows = F,
+          row_names_side = "left",
+          show_column_names = T,
+          show_row_dend = FALSE,
+          show_column_dend = FALSE,
+          column_names_side = "top",
+          row_dend_side = "left",
+          col = col_fun,
+          row_names_gp = gpar(fontsize = 15),
+          column_names_gp = gpar(fontsize = 2),
+          heatmap_legend_param = list(title = "Number of alignments"))
+  #+ ha
+fig1 = draw(fig1)
+#Кластеризовать по столбцам
+# break if 0
+# конкатенировать название библиотеки к ID рида и попробовать кластеризовать
+```
+
+```{r}
+m <- as.matrix(sapply(dinucleotide.table[, 2:ncol(dinucleotide.table)], as.numeric))
+rownames(m) <- dinucleotide.table$dinucleotide
+#m <- as.matrix(sapply(dinucleotide.table_filtered[, 2:ncol(dinucleotide.table_filtered)], as.numeric))
+#rownames(m) <- dinucleotide.table_filtered$dinucleotide
+m[is.na(m)] <- 0
+
+m_g0 <- m[, colSums(m) >= 10]
+
+sample_names <- sapply(strsplit(colnames(m_g0), "_"), `[`, 1)
+
+unique_samples <- unique(sample_names)
+sample_colors <- setNames(rainbow(length(unique_samples)), unique_samples)
+
+ha <- columnAnnotation(
+  Sample = sample_names,
+  col = list(Sample = sample_colors)
+)
+
+col_fun <- colorRamp2(c(min(m_g0), max(m_g0) / 2, max(m_g0)), c("#0d0887ff", "#b12a90ff", "#f0f921ff"))
+
+m_g0 <- m_g0[order(rowSums(m_g0), decreasing = TRUE), ]
+
+fig1 <- Heatmap(
+  m_g0,
+  cluster_columns = TRUE,
+  cluster_rows = FALSE,
+  clustering_distance_columns = "pearson",   # pretty good
+  # clustering_distance_columns = "spearman", # bad
+  # clustering_distance_columns = "kendall",  # bad
+  #clustering_distance_columns = "euclidean",  # default
+  # clustering_distance_columns = "maximum",  # bad
+  # clustering_distance_columns = "manhattan",# pretty good
+  # clustering_distance_columns = "canberra", # pretty good
+  # clustering_distance_columns = "binary",   # pretty good
+  # clustering_distance_columns = "minkowski",# pretty good
+  row_names_side = "left",
+  show_column_names = FALSE,
+  show_row_dend = FALSE,
+  show_column_dend = TRUE,
+  column_names_side = "top",
+  row_dend_side = "left",
+  col = col_fun,
+  row_names_gp = gpar(fontsize = 15),
+  column_names_gp = gpar(fontsize = 2),
+  heatmap_legend_param = list(title = "Number of alignments"),
+  top_annotation = ha
+)
+
+fig1 <- draw(fig1, annotation_legend_side = "right")
+```
+
+```{r}
+sum(m)
+```
+
+```{r}
+dinucleotide.table_long = dinucleotide.table %>%
+  pivot_longer(cols = -dinucleotide, names_to = "sample", values_to = "count")
+
+dinucleotide.table_long = dinucleotide.table_long %>%
+  group_by(sample) %>%
+  mutate(pct = count / sum(count)) %>%
+  ungroup()
+
+dominant = dinucleotide.table_long %>%
+  group_by(sample) %>%
+  filter(pct == max(pct)) %>%
+  filter(pct > 0.95)
+
+dinucleotide.table_filtered = dinucleotide.table %>%
+  filter(dinucleotide %in% dominant$dinucleotide) %>%
+  select(dinucleotide, all_of(dominant$sample))
+
+dinucleotide.table_filtered
+
+sum(select(dinucleotide.table_filtered, where(is.numeric)))
+```
+
+```{r}
+col_names = colnames(dinucleotide.table_filtered)
+
+output <- tibble(
+  sample_colors = sub("_.*", "", col_names),
+  read_id = sub("^[^_]+_", "", col_names)
+)
+
+output = output[-1,]
+
+write_tsv(output, "/Users/pavel/Desktop/stable_dinucleotides_reads.tsv", col_names = FALSE)
+```
+
+```{r}
+pdf("/Users/pavel/Desktop/initiators_heatmap.pdf", width = 15, height = 7)
+draw(fig1)
+dev.off()
+```
+
+```{r}
+#distances.histogram.path = './HeLaS3_distances_from_start.tsv'
+distances.histogram.path = './HeLaS3.whole_centromere.1G_XM_90.no_transposons.metaplot_tss_monomers.tsv'
+distances.histogram = read.delim(distances.histogram.path, header = T,  sep="\t", stringsAsFactors = F)
+distances.histogram = distances.histogram %>%
+  filter(!is.na(relative_position))
+ggplot(distances.histogram, aes(x = relative_position)) +
+  theme_classic() +
+  #geom_point() +
+  #geom_bar(stat="identity") +
+  geom_histogram(binwidth = 0.001,
+                 fill = "#00BFC4",
+                 color = "#00BFC4") +
+  labs(x = "Distance from start of the monomer",
+       y = "Count")
+```
+
+```{r}
+#(is.na(distances.histogram["relative_position"]))
+view(distances.histogram %>%
+  filter(!is.na(relative_position))) 
+```
+
+```{r}
+distances.histogram.path = './HeLaS3_distances_from_start.tsv'
+distances.histogram = read.delim(distances.histogram.path, header = F,  sep=";", stringsAsFactors = F)
+ggplot(distances.histogram, aes(x = V2, y = V1)) +
+  theme_classic() +
+  #geom_point() +
+  geom_bar(stat="identity") +
+  labs(x = "Distance from end of the monomer",
+       y = "Count")
+```
+
+```{r}
+distances.histogram.path = './HeLaS3_distances_start_HOR.csv'
+distances.histogram = read.delim(distances.histogram.path, header = F,  sep=";", stringsAsFactors = F)
+ggplot(distances.histogram, aes(x = V2, y = V1)) +
+  theme_classic() +
+  #geom_point() +
+  geom_bar(stat="identity", width = 1000000) +
+  labs(x = "Distance from end of the monomer",
+       y = "Count")
+```
+
+```{r}
+dinucleotide.table %>%
+  filter(dinucleotide == "GA") %>%
+  t() %>%
+  as.data.frame() %>%
+  filter(V1 != "GA") %>%
+  filter(V1 > 0)
+```
+
+# Analysis of reads with stable dinucleotides
+
+```{r}
+monomers.path = '/Users/pavel/Desktop/adjusted_alpha_monomers_full_ranges.bed'
+monomers = read.delim(monomers.path, header = FALSE)
+monomers = monomers[,-6]
+colnames(monomers)[1:5] = c("chr",
+                                 "start",
+                                 "end",
+                                 "type",
+                                 "strand")
+monomers = monomers %>%
+  mutate(length = end - start)
+```
+
+```{r}
+monomers %>%
+  group_by(type, strand) %>%
+  summarise(count = n()) %>%
+  ungroup() %>%
+  group_by(type) %>%
+  filter(type %in% c("D1", "D2", "J1", "J2", "W1")) %>%
+  mutate(strand = factor(strand, levels = c("+", "-"))) %>%
+  ggplot(aes(x = type, y = count, fill = strand)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  theme_classic(base_size = 20) +
+  labs(x = "Monomer type",
+       y = "Count",
+       fill = "Strand")
+ggsave(filename = paste0("/Users/pavel/Desktop/","monomer_strand_count.pdf"),width = 7,height=5)
+```
+
+```{r}
+ggplot(monomers, aes(x = type, y = length, fill = type, color = type)) +
+  #geom_violin(trim = FALSE) +
+  geom_jitter(width = 0.2, alpha = 0.1) +
+  scale_y_continuous(breaks = seq(0, 200, 10), limits = c(0, 200)) + 
+  # (155, 175)
+  labs(x = "Monomer Type",
+       y = "Length") +
+  theme_classic() +
+  theme(legend.position = "none")
+```
+
+```{r}
+# Рисовать постолбцовые пропорции
+monomers <- monomers %>%
+  mutate(type = as.character(unlist(type)))
+
+length_heatmap_data <- monomers %>%
+  filter(length >= 160, length <= 175) %>%
+  count(length, type) %>%
+  pivot_wider(names_from = type, values_from = n, values_fill = list(n = 0)) %>%
+  arrange(desc(length)) %>%
+  column_to_rownames("length")
+
+length_matrix <- as.matrix(length_heatmap_data)
+length_matrix <- length_matrix[, sort(colnames(length_matrix))]
+
+lengths <- as.integer(rownames(length_matrix))
+row_labels_to_show <- ifelse(lengths %% 1 == 0, as.character(lengths), "")
+
+length_matrix <- sweep(length_matrix, 2, colSums(length_matrix), FUN = "/")
+col_fun = colorRamp2(c(0, 0.5, 1), c("#0d0887ff", "#b12a90ff", "#f0f921ff"))
+
+#col_fun = colorRamp2(c(min(length_matrix), max(length_matrix) / 5, max(length_matrix)), c("#0d0887ff", "#b12a90ff", "#f0f921ff"))
+
+fig2 = Heatmap(length_matrix,
+        name = "Column-wise proportion",
+        col = col_fun,
+        cluster_rows = FALSE,
+        cluster_columns = FALSE,
+        row_title = "Length",
+        column_title = "Monomer Type",
+        row_names_side = "left",
+        row_labels = row_labels_to_show)
+draw(fig2)
+```
+
+```{r}
+pdf("/Users/pavel/Desktop/monomer_lengths_heatmap.pdf", width = 12, height = 7)
+draw(fig2)
+dev.off()
+```
+
+```{r}
+monomers %>%
+  filter(type == "D1" & length == "167")
+```
+
+```{r}
+# Clean of transposon signal
+transposons.path = "/Users/pavel/Desktop/3_to_1/centromere_igv/adjusted_centromeric_transposons_full_ranges.bed"
+transposons =  read.delim(transposons.path, header = FALSE)
+colnames(transposons)[1:6] = c("chr",
+                                 "start",
+                                 "end",
+                                 "type",
+                                 "strand",
+                                 "nan")
+transposons = transposons %>%
+  mutate(start500 = start - 500) %>%
+  mutate(end500 = end + 500)
+```
+
+```{r}
+# Load the table
+stable.reads.path = "/Users/pavel/Desktop/stable_reads_intersected.tsv"
+stable.reads = read.delim(stable.reads.path, header = FALSE)
+colnames(stable.reads)[1:12] = c("sample",
+                                 "monomer_chr",
+                                 "monomer_start",
+                                 "monomer_end",
+                                 "monomer_type",
+                                 "monomer_strand",
+                                 "initiator_chr",
+                                 "initiator_start",
+                                 "initiator_end",
+                                 "read_name",
+                                 "read_strand",
+                                 "initiator_dinucleotide")
+stable.reads = stable.reads %>%
+  mutate(read_strand = ifelse(read_strand == "+", "-", 
+                              ifelse(read_strand == "-", "+", read_strand))) %>%
+  mutate(sample_readname = paste(sample, read_name, sep = "_"))
+```
+
+```{r}
+transposons_ranges = transposons %>%
+  select(chr, start500, end500)
+
+stable_reads_ranges = stable.reads %>%
+  select(sample_readname, initiator_chr, initiator_start, initiator_end)
+
+overlapping = fuzzy_inner_join(
+  stable_reads_ranges,
+  transposons_ranges,
+  by = c("initiator_chr" = "chr",
+         "initiator_start" = "start500",
+         "initiator_end" = "end500"),
+  match_fun = list(`==`, `>=`, `<=`)
+)
+
+stable.reads = stable.reads %>%
+  filter(!sample_readname %in% overlapping$sample_readname)
+```
+
+```{r}
+stable.reads %>%
+  select(sample_readname) %>%
+  arrange() %>%
+  unique() %>%
+  summarise(count = n())
+```
+
+```{r}
+stable.reads.f = stable.reads %>%
+  group_by(sample_readname) %>%
+  mutate(freq = ave(seq_along(initiator_dinucleotide), initiator_dinucleotide, FUN = length)) %>%
+  group_by(sample_readname, initiator_dinucleotide) %>%
+  mutate(dinuc_count = n()) %>%
+  ungroup() %>%
+  group_by(sample_readname) %>%
+  filter(dinuc_count == max(dinuc_count)) %>%
+  select(-freq, -dinuc_count) %>%
+  ungroup()
+```
+
+```{r}
+stable.reads.matrix = stable.reads.f %>%
+  group_by(monomer_type, sample_readname) %>%
+  summarise(count = n(), .groups = "drop") %>%
+  pivot_wider(names_from = sample_readname, values_from = count, values_fill = 0)
+
+print(stable.reads.matrix)
+```
+
+```{r}
+m <- as.matrix(sapply(stable.reads.matrix[, 2:ncol(stable.reads.matrix)], as.numeric))
+rownames(m) <- stable.reads.matrix$monomer_type
+#m <- as.matrix(sapply(stable.reads.table_filtered[, 2:ncol(stable.reads.table_filtered)], as.numeric))
+#rownames(m) <- stable.reads.table_filtered$monomer_type
+m[is.na(m)] <- 0
+
+m_g0 <- m[, colSums(m) >= 10]
+
+sample_names <- sapply(strsplit(colnames(m_g0), "_"), `[`, 1)
+
+unique_samples <- unique(sample_names)
+sample_colors <- setNames(rainbow(length(unique_samples)), unique_samples)
+
+ha <- columnAnnotation(
+  Sample = sample_names,
+  col = list(Sample = sample_colors)
+)
+
+col_fun <- colorRamp2(c(min(m_g0), max(m_g0) / 2, max(m_g0)), c("#0d0887ff", "#b12a90ff", "#f0f921ff"))
+
+m_g0 <- m_g0[order(rowSums(m_g0), decreasing = TRUE), ]
+
+fig1 <- Heatmap(
+  m_g0,
+  cluster_columns = TRUE,
+  cluster_rows = TRUE,
+  clustering_distance_columns = "pearson",   # pretty good
+  clustering_distance_rows = "pearson",
+  # clustering_distance_columns = "spearman", # bad
+  # clustering_distance_columns = "kendall",  # bad
+  #clustering_distance_columns = "euclidean",  # default
+  # clustering_distance_columns = "maximum",  # bad
+  # clustering_distance_columns = "manhattan",# pretty good
+  # clustering_distance_columns = "canberra", # pretty good
+  # clustering_distance_columns = "binary",   # pretty good
+  # clustering_distance_columns = "minkowski",# pretty good
+  row_names_side = "left",
+  show_column_names = FALSE,
+  show_row_dend = FALSE,
+  show_column_dend = TRUE,
+  column_names_side = "top",
+  row_dend_side = "left",
+  col = col_fun,
+  row_names_gp = gpar(fontsize = 15),
+  column_names_gp = gpar(fontsize = 2),
+  heatmap_legend_param = list(title = "Number of alignments"),
+  top_annotation = ha
+)
+
+fig1 <- draw(fig1, annotation_legend_side = "right")
+```
+
+```{r}
+pdf("/Users/pavel/Desktop/monomer_types_heatmap.pdf", width = 15, height = 7)
+draw(fig1)
+dev.off()
+```
+
+```{r}
+stable.reads.table_long = stable.reads.matrix %>%
+  pivot_longer(cols = -monomer_type, names_to = "sample", values_to = "count")
+
+stable.reads.table_long = stable.reads.table_long %>%
+  group_by(sample) %>%
+  mutate(pct = count / sum(count)) %>%
+  ungroup()
+
+dominant = stable.reads.table_long %>%
+  group_by(sample) %>%
+  filter(pct == max(pct)) %>%
+  filter(pct > 0.95)
+
+stable.reads.table_filtered = stable.reads.matrix %>%
+  filter(monomer_type %in% dominant$monomer_type) %>%
+  select(monomer_type, all_of(dominant$sample))
+
+stable.reads.table_filtered
+sum(select(stable.reads.table_filtered, where(is.numeric)))
+```
+
+```{r}
+col_names = colnames(stable.reads.table_filtered)
+
+output = tibble(
+  sample = col_names
+)
+
+output = output[-1,]
+
+stable.dinucl.monomer.reads = stable.reads.f %>%
+  filter(sample_readname %in% output$sample)
+```
+
+```{r}
+stable.dinucl.monomer.reads.f = stable.dinucl.monomer.reads %>%
+  group_by(sample_readname) %>%
+  mutate(freq = ave(seq_along(monomer_type), monomer_type, FUN = length)) %>%
+  group_by(sample_readname, monomer_type) %>%
+  mutate(monomer_type_count = n()) %>%
+  ungroup() %>%
+  group_by(sample_readname) %>%
+  filter(monomer_type_count == max(monomer_type_count)) %>%
+  select(-freq, -monomer_type_count) %>%
+  ungroup()
+```
+
+```{r}
+stable.dinucl.monomer.reads %>%
+  select(sample_readname) %>%
+  arrange() %>%
+  unique() %>%
+  summarise(count = n())
+```
+
+```{r}
+stable.dinucl.monomer.reads.f <- stable.dinucl.monomer.reads.f %>%
+  mutate(strand_combo = paste0(monomer_strand, read_strand))
+
+valid_sample_readnames <- stable.dinucl.monomer.reads.f %>%
+  group_by(sample_readname) %>%
+  summarise(
+    n_total = n(),
+    n_same = sum(strand_combo %in% c("++", "--")),
+    n_opposite = sum(strand_combo %in% c("+-", "-+")),
+    prop_same = n_same / n_total,
+    prop_opposite = n_opposite / n_total
+  ) %>%
+  filter(prop_same >= 0.95 | prop_opposite >= 0.95) %>%
+  pull(sample_readname)
+
+stable.dinucl.monomer.reads.strand <- stable.dinucl.monomer.reads.f %>%
+  filter(sample_readname %in% valid_sample_readnames)
+```
+
+```{r}
+orientation_info <- stable.dinucl.monomer.reads.strand %>%
+  group_by(sample_readname) %>%
+  summarise(
+    prop_same = mean(strand_combo %in% c("++", "--")),
+    prop_opposite = mean(strand_combo %in% c("+-", "-+")),
+    dominant_orientation = if_else(prop_same >= prop_opposite, "same", "opposite")
+  )
+
+stable.dinucl.monomer.reads.strand <- stable.dinucl.monomer.reads.strand %>%
+  left_join(orientation_info, by = "sample_readname") %>%
+  filter(
+    (dominant_orientation == "same" & strand_combo %in% c("++", "--")) |
+    (dominant_orientation == "opposite" & strand_combo %in% c("+-", "-+"))
+  )
+```
+
+```{r}
+stable.dinucl.monomer.reads.strand.matrix = stable.dinucl.monomer.reads.strand %>%
+  group_by(strand_combo, sample_readname) %>%
+  summarise(count = n(), .groups = "drop") %>%
+  pivot_wider(names_from = sample_readname, values_from = count, values_fill = 0)
+
+print(stable.dinucl.monomer.reads.strand.matrix)
+```
+
+```{r}
+m <- as.matrix(sapply(stable.dinucl.monomer.reads.strand.matrix[, 2:ncol(stable.dinucl.monomer.reads.strand.matrix)], as.numeric))
+rownames(m) <- stable.dinucl.monomer.reads.strand.matrix$strand_combo
+#m <- as.matrix(sapply(stable.reads.table_filtered[, 2:ncol(stable.reads.table_filtered)], as.numeric))
+#rownames(m) <- stable.reads.table_filtered$strand_combo
+m[is.na(m)] <- 0
+
+m_g0 <- m[, colSums(m) >= 10]
+
+sample_names <- sapply(strsplit(colnames(m_g0), "_"), `[`, 1)
+
+unique_samples <- unique(sample_names)
+sample_colors <- setNames(rainbow(length(unique_samples)), unique_samples)
+
+ha <- columnAnnotation(
+  Sample = sample_names,
+  col = list(Sample = sample_colors)
+)
+
+col_fun <- colorRamp2(c(min(m_g0), max(m_g0) / 2, max(m_g0)), c("#0d0887ff", "#b12a90ff", "#f0f921ff"))
+
+m_g0 <- m_g0[order(rowSums(m_g0), decreasing = TRUE), ]
+
+fig1 <- Heatmap(
+  m_g0,
+  cluster_columns = TRUE,
+  cluster_rows = TRUE,
+  clustering_distance_columns = "pearson",   # pretty good
+  clustering_distance_rows = "pearson",
+  # clustering_distance_columns = "spearman", # bad
+  # clustering_distance_columns = "kendall",  # bad
+  #clustering_distance_columns = "euclidean",  # default
+  # clustering_distance_columns = "maximum",  # bad
+  # clustering_distance_columns = "manhattan",# pretty good
+  # clustering_distance_columns = "canberra", # pretty good
+  # clustering_distance_columns = "binary",   # pretty good
+  # clustering_distance_columns = "minkowski",# pretty good
+  row_names_side = "left",
+  show_column_names = FALSE,
+  show_row_dend = FALSE,
+  show_column_dend = TRUE,
+  column_names_side = "top",
+  row_dend_side = "left",
+  col = col_fun,
+  row_names_gp = gpar(fontsize = 25),
+  column_names_gp = gpar(fontsize = 2),
+  heatmap_legend_param = list(title = "Number of alignments"),
+  top_annotation = ha
+)
+
+fig1 <- draw(fig1, annotation_legend_side = "right")
+```
+
+```{r}
+sum(m)
+```
+
+```{r}
+pdf("/Users/pavel/Desktop/strands_alignments_heatmap.pdf", width = 15, height = 7)
+draw(fig1)
+dev.off()
+```
+
+```{r}
+stable.dinucl.monomer.reads.strand.f = stable.dinucl.monomer.reads.strand %>%
+  group_by(sample_readname) %>%
+  mutate(freq = ave(seq_along(dominant_orientation), dominant_orientation, FUN = length)) %>%
+  group_by(sample_readname, dominant_orientation) %>%
+  mutate(dominant_orientation_count = n()) %>%
+  ungroup() %>%
+  group_by(sample_readname) %>%
+  filter(dominant_orientation_count == max(dominant_orientation_count)) %>%
+  select(-freq, -dominant_orientation_count) %>%
+  ungroup()
+```
+
+```{r}
+stable.dinucl.monomer.reads.strand.f %>%
+  select(sample_readname) %>%
+  arrange() %>%
+  unique() %>%
+  summarise(count = n())
+```
+
+```{r}
+stable.dinucl.monomer.reads.strand.f = stable.dinucl.monomer.reads.strand.f %>%
+  mutate(monomer_length = monomer_end - monomer_start) %>%
+  mutate(distance_to_start = initiator_start - monomer_start) %>%
+  mutate(distance_to_end = monomer_end - initiator_start) %>%
+  mutate(
+    relative_distance = case_when(
+      monomer_strand == "+" ~ initiator_start - monomer_start,
+      monomer_strand == "-" ~ monomer_end - initiator_end
+    )) %>%
+  mutate(proportion_distance_to_start = distance_to_start / monomer_length) %>%
+  mutate(proportion_distance_to_end = distance_to_end / monomer_length) %>%
+  mutate(proportion_relative_distance = relative_distance / monomer_length)
+# m+i+ initiator_start - monomer_start
+# m-i- monomer_end - initiator_start
+# m+i- initiator_start - monomer_start
+# m-i+ monomer_end - initiator_start
+```
+
+```{r}
+ggplot(stable.dinucl.monomer.reads.strand.f, aes(x = monomer_type, y = monomer_length, fill = monomer_type, color = monomer_type)) +
+  #geom_violin(trim = FALSE) +
+  geom_jitter(width = 0.2, alpha = 0.1) +
+  scale_y_continuous(breaks = seq(0, 200, 1), limits = c(155, 175)) + 
+  labs(x = "Monomer Type",
+       y = "Length") +
+  theme_classic() +
+  theme(legend.position = "none")
+```
+
+```{r}
+#stable.dinucl.monomer.reads.strand.f <- stable.dinucl.monomer.reads.strand.f %>%
+#  mutate(type = as.character(unlist(type)))
+
+#length_heatmap_data_filt = stable.dinucl.monomer.reads.strand.f %>%
+length_heatmap_data_filt = filtered_stable.dinucl.monomer.reads %>%
+  filter(monomer_length >= 160, monomer_length <= 175) %>%
+  count(monomer_length, monomer_type) %>%
+  pivot_wider(names_from = monomer_type, values_from = n, values_fill = list(n = 0)) %>%
+  arrange(desc(monomer_length)) %>%
+  column_to_rownames("monomer_length")
+
+length_matrix_filt <- as.matrix(length_heatmap_data_filt)
+length_matrix_filt <- length_matrix_filt[, sort(colnames(length_matrix_filt))]
+
+lengths <- as.integer(rownames(length_matrix_filt))
+row_labels_to_show <- ifelse(lengths %% 1 == 0, as.character(lengths), "")
+
+length_matrix_filt <- sweep(length_matrix_filt, 2, colSums(length_matrix_filt), FUN = "/")
+col_fun = colorRamp2(c(0, 0.5, 1), c("#0d0887ff", "#b12a90ff", "#f0f921ff"))
+
+#col_fun = colorRamp2(c(min(length_matrix_filt), max(length_matrix_filt) / 5, max(length_matrix_filt)), c("#0d0887ff", "#b12a90ff", "#f0f921ff"))
+
+fig3 = Heatmap(length_matrix_filt,
+        name = "Column-wise proportion",
+        col = col_fun,
+        cluster_rows = FALSE,
+        cluster_columns = FALSE,
+        row_title = "Length",
+        column_title = "Monomer Type",
+        row_names_side = "left",
+        row_labels = row_labels_to_show,
+        column_names_rot = 0)
+draw(fig3)
+```
+
+```{r}
+pdf("/Users/pavel/Desktop/monomer_lengths_mapped_heatmap.pdf", width = 10, height = 7)
+draw(fig3)
+dev.off()
+```
+
+```{r}
+ggplot(stable.dinucl.monomer.reads.strand.f,
+       aes(#x = proportion_distance_to_start,
+           #x = proportion_distance_to_end,
+           x = proportion_relative_distance,
+           color = "black")) +
+  #geom_point() +
+  geom_bar() +
+  labs(x = "Proportion of distance from the start of the monomer",
+       y = "Count") +
+  theme_classic()
+```
+
+```{r}
+strand_matrix = stable.dinucl.monomer.reads.strand.f %>%
+  count(monomer_strand, read_strand) %>%
+  complete(monomer_strand = c("+", "-"), read_strand = c("+", "-"), fill = list(n = 0))
+
+ggplot(strand_matrix, aes(x = read_strand, y = monomer_strand, fill = n)) +
+  geom_tile(color = "white") +
+  geom_text(aes(label = n), size = 6) +
+  scale_fill_gradient(low = "white", high = "steelblue") +
+  labs(x = "Read strand", y = "Monomer strand", fill = "Count") +
+  theme_classic() +
+  theme(
+    axis.text.x = element_text(size = 25),
+    axis.text.y = element_text(size = 25)
+  )
+```
+
+```{r}
+write_tsv(stable.dinucl.monomer.reads, "/Users/pavel/Desktop/stable.dinucl.monomer.reads.tsv", col_names = TRUE)
+```
+proportion_distance_to_start
+proportion_distance_to_end
+proportion_relative_distance
+           
+```{r}
+# Более наглядно просто в относительной длине
+filtered_stable.dinucl.monomer.alignments = stable.dinucl.monomer.reads.strand.f %>%
+  group_by(monomer_type, sample_readname, monomer_length) %>%
+  mutate(mode_dist = relative_distance[which.max(tabulate(match(relative_distance, relative_distance)))],
+         mode_dist_freq = mean(relative_distance == mode_dist)) %>%
+  filter(mode_dist_freq >= 0.95) %>%
+  ungroup()
+
+filtered_stable.dinucl.monomer.alignments
+```
+
+```{r}
+filtered_stable.dinucl.monomer.alignments %>%
+  select(sample_readname) %>%
+  arrange() %>%
+  unique() %>%
+  summarise(count = n())
+```
+
+```{r}
+filtered_stable.dinucl.monomer.alignments.f = filtered_stable.dinucl.monomer.alignments %>%
+  group_by(sample_readname) %>%
+  mutate(freq = ave(seq_along(mode_dist), mode_dist, FUN = length)) %>%
+  group_by(sample_readname, mode_dist) %>%
+  mutate(mode_dist_count = n()) %>%
+  ungroup() %>%
+  group_by(sample_readname) %>%
+  filter(mode_dist_count == max(mode_dist_count)) %>%
+  select(-freq, -mode_dist_count) %>%
+  ungroup()
+```
+
+```{r}
+filtered_stable.dinucl.monomer.reads = filtered_stable.dinucl.monomer.alignments.f %>%
+  select(-c(monomer_chr,
+            monomer_start,
+            monomer_end,
+            #monomer_strand,
+            initiator_chr,
+            initiator_start,
+            initiator_end,
+            #read_strand,
+            strand_combo,
+            prop_same,
+            prop_opposite,
+            distance_to_start,
+            distance_to_end,
+            relative_distance,
+            proportion_distance_to_start,
+            proportion_distance_to_end,
+            proportion_relative_distance,
+            mode_dist_freq)) %>%
+  arrange(monomer_type, sample_readname, monomer_length) %>%
+  unique() %>%
+  mutate(relative_distance = mode_dist / monomer_length)
+filtered_stable.dinucl.monomer.reads
+```
+
+```{r}
+monomer_counts <- filtered_stable.dinucl.monomer.reads %>%
+  group_by(monomer_type, sample) %>%
+  summarise(unique_reads = n_distinct(read_name)) %>%
+  arrange(desc(unique_reads)) %>%
+  ungroup() %>%
+  group_by(monomer_type) %>%
+  mutate(unique_reads_by_type = sum(unique_reads)) %>%
+  ungroup()
+
+ggplot(monomer_counts, aes(x = reorder(monomer_type, -unique_reads_by_type), y = unique_reads, color = sample, fill = sample)) +
+  geom_bar(stat = "identity") +
+  geom_hline(yintercept = 43.6, linetype = 2) +
+  labs(
+    x = "Monomer Type",
+    y = "Unique Reads"
+  ) +
+  theme_classic() #+
+#ggsave(filename = paste0("/Users/pavel/Desktop/","monomer_read_count.pdf"),width = 7,height=5)
+  #theme(legend.position = "None")
+```
+
+```{r}
+sum(monomer_counts$unique_reads)
+125/1470
+92/1470
+1470*0.05
+
+125/872
+44/872
+872*0.1
+872*0.05
+```
+
+```{r}
+filtered_stable.dinucl.monomer.reads %>%
+  select(sample_readname) %>%
+  unique() %>%
+  summarise(count = n())
+```
+
+```{r}
+# не даем в тексте
+ggplot(filtered_stable.dinucl.monomer.reads, aes(x = relative_distance, color = sample, fill = sample)) +
+  #geom_point() +
+  #geom_bar(width=0.1, position = "stack") +
+  geom_histogram(binwidth=0.01, position = "stack") +
+  labs(x = "Distance from end of the monomer",
+       y = "Unique alignments") +
+  scale_x_continuous(breaks = seq(0, 1, 0.05)) + 
+  theme_classic()
+```
+
+```{r}
+most_frequent_lengths = filtered_stable.dinucl.monomer.reads %>%
+  group_by(monomer_type, monomer_length) %>%
+  summarise(count = n(), .groups = "drop") %>%
+  group_by(monomer_type) %>%
+  mutate(rank = dense_rank(desc(count))) %>%
+  filter(rank <= 2) %>%
+  arrange(monomer_type, rank)
+most_frequent_lengths
+```
+
+```{r}
+filtered_stable.dinucl.monomer.reads.DJ = filtered_stable.dinucl.monomer.reads %>%
+  filter(monomer_type %in% c("D1", "D2", "J1", "J2", "W1")) %>%
+  filter(
+    (monomer_type == "D1" & monomer_length >= 161 & monomer_length <= 171) |
+    (monomer_type == "D2" & monomer_length >= 164 & monomer_length <= 171) |
+    (monomer_type == "J1" & monomer_length >= 163 & monomer_length <= 172) |
+    (monomer_type == "J2" & monomer_length >= 164 & monomer_length <= 170) |
+    (monomer_type == "W1" & monomer_length >= 135 & monomer_length <= 171)
+  )
+filtered_stable.dinucl.monomer.reads.DJ.exact_length = filtered_stable.dinucl.monomer.reads.DJ %>%
+  filter(
+    (monomer_type == "D1" & (monomer_length == 166 | monomer_length == 167)) |
+    (monomer_type == "D2" & (monomer_length == 171 | monomer_length == 170)) |
+    (monomer_type == "J1" & (monomer_length == 169 | monomer_length == 170)) |
+    (monomer_type == "J2" & (monomer_length == 169 | monomer_length == 167)) |
+    (monomer_type == "W1" & (monomer_length == 164 | monomer_length == 163))
+  ) %>%
+  mutate(
+    type_length = paste(monomer_type, monomer_length, sep = "-")
+  )
+```
+
+```{r}
+filtered_stable.dinucl.monomer.reads.DJ$dominant_orientation <- factor(
+  filtered_stable.dinucl.monomer.reads.DJ$dominant_orientation,
+  levels = c("same", "opposite")
+)
+
+orientation_labels <- c(
+  "same" = "Same direction",
+  "opposite" = "Opposite direction"
+)
+
+ggplot(filtered_stable.dinucl.monomer.reads.DJ, aes(x = relative_distance, color = sample, fill = sample)) + 
+  geom_histogram(binwidth = 0.01, position = "stack") +
+  geom_hline(yintercept = 10, linetype = 2) +
+  labs(x = "Proportion of distance to the 5'-end of the monomer", y = "Reads") +
+  scale_x_continuous(breaks = seq(0, 1, 0.1)) +
+  theme_classic() +
+  theme(
+    text = element_text(size = 20),
+    axis.text = element_text(size = 15),
+    axis.title = element_text(size = 20),
+    strip.text = element_text(size = 20),
+    strip.text.y = element_text(size = 20, angle = 0),
+    legend.text = element_text(size = 20),
+    legend.title = element_text(size = 20)
+    ) +
+  facet_grid(rows = vars(monomer_type), cols = vars(dominant_orientation),
+             scales = "free_y",
+             labeller = labeller(dominant_orientation = orientation_labels)
+             ) #+
+ggsave(filename = paste0("/Users/pavel/Desktop/","proportion_relative_distance.pdf"),width = 12,height=9)
+```
+
+```{r}
+filtered_stable.dinucl.monomer.reads.DJ.exact_length$dominant_orientation <- factor(
+  filtered_stable.dinucl.monomer.reads.DJ.exact_length$dominant_orientation,
+  levels = c("same", "opposite")
+)
+
+orientation_labels <- c(
+  "same" = "Same direction",
+  "opposite" = "Opposite direction"
+)
+
+ggplot(filtered_stable.dinucl.monomer.reads.DJ.exact_length, aes(x = mode_dist, color = sample, fill = sample)) + 
+  geom_histogram(binwidth = 0.01, position = "stack") +
+  geom_hline(yintercept = 10, linetype = 2) +
+  # geom_text(data = annotation_df, aes(x = x, y = y, label = label), inherit.aes = FALSE) +
+  labs(x = "Distance to the 5'-end of the monomer", y = "Reads") +
+  scale_x_continuous(breaks = seq(0, 171, 10)) +
+  theme_classic() +
+  theme(
+    text = element_text(size = 20),
+    axis.text = element_text(size = 10),
+    axis.title = element_text(size = 20),
+    strip.text = element_text(size = 20),
+    strip.text.y = element_text(size = 20, angle = 0),
+    legend.text = element_text(size = 20),
+    legend.title = element_text(size = 20)
+    ) +
+  facet_grid(rows = vars(type_length), cols = vars(dominant_orientation),
+             scales = "free_y",
+             labeller = labeller(dominant_orientation = orientation_labels)
+             )
+ggsave(filename = paste0("/Users/pavel/Desktop/","proportion_relative_distance_split.pdf"),plot = last_plot(),width = 15,height=9)
+```
+
+```{r}
+filtered_stable.dinucl.monomer.reads.DJ.exact_length.f = filtered_stable.dinucl.monomer.reads.DJ.exact_length %>%
+  filter(type_length %in% c("D1-167", "J2-169", "D1-166", "W3-138") & dominant_orientation %in% c("same", "opposite") | type_length %in% c("J1-169") & dominant_orientation %in% c("same", "opposite")) %>%
+  filter()
+
+annotation_df = data.frame(
+  type_length = c("D1-167", "D1-167", "D1-167", "D1-167", "D1-167", "J2-169", "D1-166", "D1-166", "W3-138", "J1-169"),
+  dominant_orientation = c("same", "same", "same", "same", "same", "same", "same", "same", "same", "opposite"),
+  x = c(160, 159, 158, 157, 156, 118, 33, 49, 130, 135),
+  y = c(350, 140, 120, 100, 80,  45,  13, 13, 30,  12),
+  label = c("TT", "TC", "CT", "CA", "AC", "CA", "TA", "CG", "TG", "TG")
+)
+
+filtered_stable.dinucl.monomer.reads.DJ.exact_length.f$dominant_orientation = factor(
+  filtered_stable.dinucl.monomer.reads.DJ.exact_length.f$dominant_orientation,
+  levels = c("same", "opposite")
+)
+
+annotation_df$dominant_orientation = factor(
+  annotation_df$dominant_orientation,
+  levels = c("same", "opposite")
+)
+
+orientation_labels <- c(
+  "same" = "Same direction",
+  "opposite" = "Opposite direction"
+)
+
+ggplot(filtered_stable.dinucl.monomer.reads.DJ.exact_length.f, aes(x = mode_dist, color = sample, fill = sample)) + 
+  geom_histogram(binwidth = 0.01, position = "stack") +
+  geom_text(data = annotation_df, aes(x = x, y = y, label = label), inherit.aes = FALSE) +
+  labs(x = "Relative distance from the start of the monomer", y = "Reads") +
+  scale_x_continuous(breaks = seq(0, 171, 10)) +
+  theme_classic() +
+  facet_grid(rows = vars(type_length), cols = vars(dominant_orientation),
+             scales = "free_y",
+             labeller = labeller(dominant_orientation = orientation_labels)
+             ) +
+  theme(strip.placement = "outside", 
+      #axis.text.x = element_text(),
+      axis.ticks.x = element_line(),
+      text = element_text(size = 20),
+      axis.text = element_text(size = 10),
+      axis.title = element_text(size = 20),
+      strip.text = element_text(size = 20),
+      strip.text.y = element_text(size = 20, angle = 0),
+      legend.text = element_text(size = 20),
+      legend.title = element_text(size = 20)
+    ) #+
+ggsave(filename = paste0("/Users/pavel/Desktop/","proportion_relative_distance_sele.pdf"),width = 12,height=9)
+```
+
+```{r}
+filtered_stable.dinucl.monomer.reads.DJ.exact_length.f = filtered_stable.dinucl.monomer.reads.DJ.exact_length %>%
+  filter(type_length %in% c("D1-166", "J2-169") & dominant_orientation %in% c("same", "opposite") | type_length %in% c("J1-169", "W1-163", "W1-164") & dominant_orientation %in% c("same", "opposite")) %>%
+  filter()
+
+annotation_df = data.frame(
+  type_length = c("J2-169", "J2-169", "J2-169", "J2-169", "J2-169","D1-166", "D1-166","J1-169", "W1-163", "W1-164"),
+  dominant_orientation = c("same", "same", "same", "same","same", "same", "same", "opposite", "opposite", "opposite"),
+  x = c(90, 68, 149, 110, 112, 27, 56, 130, 47, 47),
+  y = c(15, 17, 15,  20,  48,  11, 11, 12,  13, 13),
+  label = c("TG", "CA", "CA", "CA", "CA", "TA", "CG","TG", "TT", "TT")
+)
+    
+filtered_stable.dinucl.monomer.reads.DJ.exact_length.f$dominant_orientation = factor(
+  filtered_stable.dinucl.monomer.reads.DJ.exact_length.f$dominant_orientation,
+  levels = c("same", "opposite")
+)
+
+annotation_df$dominant_orientation = factor(
+  annotation_df$dominant_orientation,
+  levels = c("same", "opposite")
+)
+
+orientation_labels <- c(
+  "same" = "Same direction",
+  "opposite" = "Opposite direction"
+)
+
+ggplot(filtered_stable.dinucl.monomer.reads.DJ.exact_length.f, aes(x = mode_dist, color = sample, fill = sample)) + 
+  geom_histogram(binwidth = 0.01, position = "stack") +
+  geom_text(data = annotation_df, aes(x = x, y = y, label = label),
+            inherit.aes = FALSE,
+            size = 5) +
+  labs(x = "Distance to the 5'-end of the monomer", y = "Reads") +
+  scale_x_continuous(breaks = seq(0, 170, 10)) +
+  theme_classic() +
+  facet_grid(rows = vars(type_length), cols = vars(dominant_orientation),
+             scales = "free_y",
+             labeller = labeller(dominant_orientation = orientation_labels)
+             ) +
+  theme(strip.placement = "outside", 
+      #axis.text.x = element_text(),
+      axis.ticks.x = element_line(),
+      text = element_text(size = 20),
+      axis.text = element_text(size = 10),
+      axis.title = element_text(size = 20),
+      strip.text = element_text(size = 20),
+      strip.text.y = element_text(size = 20, angle = 0),
+      legend.text = element_text(size = 20),
+      legend.title = element_text(size = 20)
+    )  #+
+ggsave(filename = paste0("/Users/pavel/Desktop/","proportion_relative_distance_sele.pdf"),width = 15,height=9)
+```
+
+```{r}
+monomers %>%
+  filter(type == "D1" & length == "167")
+1027+163
+```
+
+```{r}
+filtered_stable.dinucl.monomer.alignments.f %>%
+  # filter(monomer_type == "D1" &
+  #          monomer_length == "167" &
+  #          sample == "HeLaS3" &
+  #          initiator_dinucleotide == "TC")
+  # filter(monomer_type == "D1" &
+  #          monomer_length == "166" &
+  #          sample == "MCF7" &
+  #          initiator_dinucleotide == "TA")
+  # filter(monomer_type == "J1" &
+  #          monomer_length == "169" &
+  #          sample == "HeLaS3" &
+  #          initiator_dinucleotide == "TG")
+  # filter(monomer_type == "W3" &
+  #          monomer_length == "138" &
+  #          sample == "HeLaS3" &
+  #          initiator_dinucleotide == "TG")
+  filter(monomer_type == "W1" &
+           monomer_length == "163" &
+           sample == "H9hESC" &
+           initiator_dinucleotide == "TT")
+267916+53
+```
+
+```{r}
+filtered_stable.dinucl.monomer.reads.DJ.exact_length %>%
+  # filter(type_length == "D1-167") %>%
+  # filter(type_length == "J2-169") %>%
+  # filter(type_length == "D1-166") %>%
+  # filter(type_length == "W3-138") %>%
+  # filter(type_length == "J1-169") %>%
+  filter(type_length == "W1-163") %>%
+  # filter(type_length == "W1-164") %>%
+  group_by(mode_dist) %>%
+  summarise(count = n(), .groups = "drop") %>%
+  arrange(desc(count))
+filtered_stable.dinucl.monomer.reads.DJ.exact_length %>%
+  # filter(type_length == "D1-167") %>%
+  # filter(mode_dist == 163) %>% # TT
+  # filter(mode_dist == 161) %>% # TC
+  # filter(mode_dist == 160) %>% # CT
+  # filter(mode_dist == 158) %>% # CA
+  # filter(mode_dist == 159) %>% # AC
+  # filter(type_length == "J2-169") %>%
+  # filter(mode_dist == 118) %>% # CA
+  # filter(mode_dist == 116) %>% # CA
+  # filter(mode_dist == 156) %>% # CA
+  # filter(mode_dist == 72) %>% # CA
+  # filter(mode_dist == 96) %>% # TG
+  # filter(type_length == "D1-166") %>%
+  # filter(mode_dist == 33) %>% # TA
+  # filter(mode_dist == 49) %>% # CG
+  # filter(type_length == "W3-138") %>%
+  # filter(mode_dist == 132) %>% # TG
+  # filter(type_length == "J1-169") %>%
+  # filter(mode_dist == 138) %>% # TG
+  filter(type_length == "W1-163") %>%
+  filter(mode_dist == 53) %>% # TT
+  # filter(type_length == "W1-164") %>%
+  # filter(mode_dist == 53) %>% # TT
+  group_by(initiator_dinucleotide) %>%
+  summarise(count = n(), .groups = "drop") %>%
+  arrange(desc(count))
+```
+
+```{r}
+filtered_stable.dinucl.monomer.reads.for.strand = filtered_stable.dinucl.monomer.reads %>%
+  select(c(sample_readname,
+           monomer_type,
+           dominant_orientation
+  )) %>%
+  arrange(monomer_type, sample_readname) %>%
+  unique() %>%
+  group_by(monomer_type) %>%
+  mutate(read_by_monomer_count = n()) %>%
+  filter(read_by_monomer_count >= 20)
+  # filter(monomer_type %in% c("D1", "D2", "J1", "J2", "W1"))
+
+prop_results = filtered_stable.dinucl.monomer.reads.for.strand %>%
+  group_by(monomer_type) %>%
+  summarize(
+    same_count = sum(dominant_orientation == "same"),
+    total = first(read_by_monomer_count)
+  ) %>%
+  mutate(
+    prop_test = map2(same_count, total, ~ prop.test(x = .x, n = .y, alternative = "two.sided")),
+    tidied = map(prop_test, tidy)
+  ) %>%
+  unnest(tidied) %>%
+  select(monomer_type, same_count, total, p.value)
+
+prop_results = prop_results %>%
+  mutate(p.value.bonferroni = p.adjust(p.value, method = "bonferroni")) %>%
+print(prop_results)
+```
+
+```{r}
+# Точный тест Фишера или хи квадрат
+# 4 теста с поправкой
+monomer_strands = filtered_stable.dinucl.monomer.reads %>%
+  select(monomer_type, monomer_strand, read_strand) %>%
+  filter(monomer_type %in% c("D1", "D2", "J1", "J2", "W1"))
+
+strand_matrix_all <- monomer_strands %>%
+  count(monomer_type, monomer_strand, read_strand) %>%
+  complete(
+    monomer_type,
+    monomer_strand = c("+", "-"),
+    read_strand = c("+", "-"),
+    fill = list(n = 0)
+  )
+
+ggplot(strand_matrix_all, aes(x = read_strand, y = monomer_strand, fill = n)) +
+  geom_tile(color = "white") +
+  geom_text(aes(label = n), size = 6) +
+  scale_fill_gradient(low = "white", high = "steelblue") +
+  labs(x = "Read strand", y = "Monomer strand", fill = "Read Count") +
+  theme_classic() +
+  facet_wrap(~ monomer_type) +
+  theme(
+    strip.text = element_text(size = 25),
+    axis.text.x = element_text(size = 25),
+    axis.text.y = element_text(size = 25),
+    axis.title = element_text(size = 25),
+    legend.title = element_text(size = 25),
+    legend.text = element_text(size = 25)
+  ) #+
+ggsave(filename = paste0("/Users/pavel/Desktop/","strand_statistics.pdf"),width = 14,height=9)
+```
+
+```{r}
+filtered_stable.dinucl.monomer.reads %>%
+  group_by(monomer_type, monomer_strand) %>%
+  summarise(count = n()) %>%
+  ungroup() %>%
+  group_by(monomer_type) %>%
+  filter(monomer_type %in% c("D1", "D2", "J1", "J2", "W1")) %>%
+  mutate(monomer_strand = factor(monomer_strand, levels = c("+", "-"))) %>%
+  ggplot(aes(x = monomer_type, y = count, fill = monomer_strand)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  theme_classic(base_size = 20) +
+  labs(x = "Monomer type",
+       y = "Count",
+       fill = "Strand")
+ggsave(filename = paste0("/Users/pavel/Desktop/","monomer_strand_count_mapped.pdf"),width = 7,height=5)
+```
+
+```{r}
+fisher_results = strand_matrix_all %>%
+  group_by(monomer_type) %>%
+  summarise(
+    minus_minus = n[monomer_strand == "-" & read_strand == "-"],
+    minus_plus  = n[monomer_strand == "-" & read_strand == "+"],
+    plus_minus  = n[monomer_strand == "+" & read_strand == "-"],
+    plus_plus   = n[monomer_strand == "+" & read_strand == "+"],
+    .groups = "drop"
+  ) %>%
+  rowwise() %>%
+  mutate(
+    fisher_p = fisher.test(matrix(c(minus_minus, minus_plus, plus_minus, plus_plus), nrow = 2))$p.value
+  )
+
+fisher_results = fisher_results %>%
+  mutate(
+    p_adj_bonf = p.adjust(fisher_p, method = "bonferroni"),
+    #p_adj_holm = p.adjust(fisher_p, method = "holm"),
+    #p_adj_fdr = p.adjust(fisher_p, method = "BH")
+  )
+
+print(fisher_results)
+
+# fisher_results %>%
+#   select(monomer_type, fisher_p, p_adj_bonf, p_adj_holm, p_adj_fdr)
+```
+
+```{r}
+type_initiator_heatmap_data <- filtered_stable.dinucl.monomer.reads %>%
+  count(monomer_type, initiator_dinucleotide) %>%
+  group_by(monomer_type) %>%
+  mutate(prop = n / sum(n)) %>%
+  select(-n) %>%
+  ungroup()
+
+type_initiator_heatmap_matrix <- type_initiator_heatmap_data %>%
+  pivot_wider(names_from = initiator_dinucleotide, values_from = prop, values_fill = 0) %>%
+  column_to_rownames("monomer_type") %>%
+  as.matrix()
+
+col_fun <- colorRamp2(c(min(type_initiator_heatmap_matrix), max(type_initiator_heatmap_matrix) / 2, max(type_initiator_heatmap_matrix)), c("#0d0887ff", "#b12a90ff", "#f0f921ff"))
+
+fig4 = Heatmap(
+  type_initiator_heatmap_matrix,
+  name = "Proportion",
+  col = col_fun,
+  cluster_rows = FALSE,
+  cluster_columns = FALSE,
+  column_names_side = "top",
+  row_names_side = "left",
+  column_names_rot = 0,
+  column_names_centered = TRUE,
+  row_names_gp = gpar(fontsize = 12),
+  column_names_gp = gpar(fontsize = 12),
+  heatmap_legend_param = list(
+    title = "Proportion of read counts by rows",
+    at = seq(0, 1, 0.2),
+    labels = scales::percent(seq(0, 1, 0.2))
+  )
+)
+fig4
+```
+
+```{r}
+pdf("/Users/pavel/Desktop/monomer_dinucleotide_heatmap.pdf", width = 8, height = 7)
+fig4
+dev.off()
+```
+
+```{r}
+hmdf = as.data.frame(type_initiator_heatmap_matrix)
+hmdf$sum.of.row = rowSums(hmdf)
+```
+
+```{r}
+# Не идет в текст
+filtered_stable.dinucl.monomer.reads.matrix = filtered_stable.dinucl.monomer.reads %>%
+  group_by(initiator_dinucleotide, sample_readname) %>%
+  summarise(count = n(), .groups = "drop") %>%
+  pivot_wider(names_from = sample_readname, values_from = count, values_fill = 0)
+
+m = as.matrix(sapply(filtered_stable.dinucl.monomer.reads.matrix[, 2:ncol(filtered_stable.dinucl.monomer.reads.matrix)], as.numeric))
+rownames(m) = filtered_stable.dinucl.monomer.reads.matrix$initiator_dinucleotide
+m[is.na(m)] = 0
+
+sample_names = sapply(strsplit(colnames(m), "_"), `[`, 1)
+
+unique_samples = unique(sample_names)
+sample_colors = setNames(rainbow(length(unique_samples)), unique_samples)
+
+ha = columnAnnotation(
+  Sample = sample_names,
+  col = list(Sample = sample_colors)
+)
+
+col_fun <- colorRamp2(c(min(m), max(m) / 2, max(m)), c("#0d0887ff", "#b12a90ff", "#f0f921ff"))
+
+fig1 <- Heatmap(
+  m,
+  cluster_columns = TRUE,
+  cluster_rows = TRUE,
+  clustering_distance_columns = "pearson",   # pretty good
+  clustering_distance_rows = "pearson",
+  #clustering_distance_columns = "euclidean",  # default
+  row_names_side = "left",
+  show_column_names = FALSE,
+  show_row_dend = FALSE,
+  show_column_dend = TRUE,
+  column_names_side = "top",
+  row_dend_side = "left",
+  col = col_fun,
+  row_names_gp = gpar(fontsize = 15),
+  column_names_gp = gpar(fontsize = 2),
+  heatmap_legend_param = list(title = "Number of reads"),
+  top_annotation = ha
+)
+
+fig1 <- draw(fig1, annotation_legend_side = "right")
+```
+
+```{r}
+filtered_stable.dinucl.monomer.reads.matrix = filtered_stable.dinucl.monomer.reads %>%
+  group_by(monomer_type, sample_readname) %>%
+  summarise(count = n(), .groups = "drop") %>%
+  pivot_wider(names_from = sample_readname, values_from = count, values_fill = 0)
+
+m = as.matrix(sapply(filtered_stable.dinucl.monomer.reads.matrix[, 2:ncol(filtered_stable.dinucl.monomer.reads.matrix)], as.numeric))
+rownames(m) = filtered_stable.dinucl.monomer.reads.matrix$monomer_type
+m[is.na(m)] = 0
+
+sample_names = sapply(strsplit(colnames(m), "_"), `[`, 1)
+
+unique_samples = unique(sample_names)
+sample_colors = setNames(rainbow(length(unique_samples)), unique_samples)
+
+ha = columnAnnotation(
+  Sample = sample_names,
+  col = list(Sample = sample_colors)
+)
+
+col_fun <- colorRamp2(c(min(m), max(m) / 2, max(m)), c("#0d0887ff", "#b12a90ff", "#f0f921ff"))
+
+fig1 <- Heatmap(
+  m,
+  cluster_columns = TRUE,
+  cluster_rows = TRUE,
+  clustering_distance_columns = "pearson",   # pretty good
+  clustering_distance_rows = "pearson",
+  #clustering_distance_columns = "euclidean",  # default
+  row_names_side = "left",
+  show_column_names = FALSE,
+  show_row_dend = FALSE,
+  show_column_dend = TRUE,
+  column_names_side = "top",
+  row_dend_side = "left",
+  col = col_fun,
+  row_names_gp = gpar(fontsize = 15),
+  column_names_gp = gpar(fontsize = 2),
+  heatmap_legend_param = list(title = "Number of reads"),
+  top_annotation = ha
+)
+
+fig1 <- draw(fig1, annotation_legend_side = "right")
+```
+
+```{r}
+strand_matrix = filtered_stable.dinucl.monomer.reads %>%
+  count(monomer_strand, read_strand) %>%
+  complete(monomer_strand = c("+", "-"), read_strand = c("+", "-"), fill = list(n = 0))
+
+ggplot(strand_matrix, aes(x = read_strand, y = monomer_strand, fill = n)) +
+  geom_tile(color = "white") +
+  geom_text(aes(label = n), size = 6) +
+  scale_fill_gradient(low = "white", high = "steelblue") +
+  labs(x = "Read strand", y = "Monomer strand", fill = "Count") +
+  theme_classic() +
+  theme(
+    axis.text.x = element_text(size = 20),
+    axis.text.y = element_text(size = 20)
+  )
+```
+
+
+
+
+
+
+
+
+
+# CAGEr analysis
+
+```{r}
+library(CAGEr)
+library(BSgenome)
+library(BSgenome.Hsapiens.NCBI.T2T.CHM13v2.0)
+library(viridis)
+library(ggplot2)
+library(reshape2)
+library(dplyr)
+library(data.table)
+library(tidytext)
+library(GenomicRanges)
+library(sparseMatrixStats)
+library(DelayedMatrixStats)
+```
+
+```{r}
+star_TSS = readRDS("/Users/pavel/Desktop/SoftclipG_CAGEexp_T2T_CHM13v2.0_annotated.RDS")
+#genome(star_TSS) = "BSgenome.Hsapiens.NCBI.T2T.CHM13v2.0"
+genome = BSgenome.Hsapiens.NCBI.T2T.CHM13v2.0
+```
+
+```{r}
+star_TSS = normalizeTagCount(star_TSS, method = "powerLaw", T = 10^6)
+star_TSS = filterLowExpCTSS(star_TSS, thresholdIsTpm = TRUE, nrPassThreshold = 1, threshold = 1)
+#tag_clusters = distclu(star_TSS, maxDist = 20, keepSingletonsAbove = 5)
+#tagClustersGR(star_TSS) = tag_clusters
+```
+
+```{r}
+# Save BW tracks
+library(CAGEr)
+library(rtracklayer)
+library(GenomicRanges)
+
+star_TSS = readRDS("/Users/pavel/Desktop/SoftclipG_CAGEexp_T2T_CHM13v2.0_annotated.RDS")
+star_TSS = normalizeTagCount(star_TSS, method = "powerLaw", T = 10^6)
+star_TSS = filterLowExpCTSS(star_TSS, thresholdIsTpm = TRUE, nrPassThreshold = 1, threshold = 1)
+
+samples = unname(sampleLabels(star_TSS))
+
+tagcount_exp = experiments(star_TSS)[[1]]
+gr_ctss = rowRanges(tagcount_exp)
+ctss_matrix = assays(tagcount_exp)[[1]]
+
+genome_fixed = BSgenome.Hsapiens.NCBI.T2T.CHM13v2.0
+seqlevels(genome_fixed) = paste0("chr", seqlevels(genome_fixed))
+seqlevels(genome_fixed)[seqlevels(genome_fixed) == "chrMT"] = "chrM"
+
+genome_lengths = seqlengths(genome_fixed)
+
+for (sample in samples) {
+  
+  message("Processing sample: ", sample)
+  
+  gr = GRanges(
+    seqnames = seqnames(gr_ctss),
+    ranges = IRanges(start = start(gr_ctss), width = 1),
+    strand = strand(gr_ctss),
+    score = ctss_matrix[, sample]
+  )
+  
+  seqlengths(gr) = genome_lengths[names(seqlengths(gr))]
+  
+  gr_plus = gr[strand(gr) == "+"]
+  gr_minus = gr[strand(gr) == "-"]
+  
+  export(gr_plus, format = "BigWig", con = paste0("/Users/pavel/Desktop/star_normalized_bws/", sample, "_F.bw"))
+  export(gr_minus, format = "BigWig", con = paste0("/Users/pavel/Desktop/star_normalized_bws/", sample, "_R.bw"))
+}
+```
+
+```{r}
+seqlengths(genome)
+genome[["1"]]
+genome[["chr1"]]
+CTSStagCountSE(star_TSS)
+CTSScoordinatesGR(star_TSS)
+CTSStagCountDF(star_TSS)
+CTSStagCountGR(star_TSS, 1)
+```
+
+```{r}
+# Check if anything is in the signal matrix
+dim(CTSStagCountSE(star_TSS))
+
+# Check total number of CTSS positions
+length(rowRanges(CTSStagCountSE(star_TSS)))
+
+# Check total counts per sample
+star_TSS$librarySizes
+
+# View the first few ranges
+head(rowRanges(CTSStagCountSE(star_TSS)))
+
+# Peek at one sample’s counts
+assay(CTSStagCountSE(star_TSS))[,1][1:10]
+```
+
+```{r}
+pdf("/Users/pavel/Desktop/plotAnnot.pdf", width = 9, height = 5)
+plotAnnot(star_TSS, "counts")
+dev.off()
+```
+
+```{r}
+
+```
+
+```{r}
+# first version
+library(BSgenome.Hsapiens.NCBI.T2T.CHM13v2.0)
+genome = BSgenome.Hsapiens.NCBI.T2T.CHM13v2.0
+
+tmp = as.data.frame(CTSScoordinatesGR(object = star_TSS), row.names = NULL)
+tmp$score = rowSums(as.data.frame(CTSSnormalizedTpmDF(object = star_TSS)))
+tmp = tmp[which(tmp$filteredCTSSidx == "FALSE"),]
+seqlevels(genome) = paste0("chr", seqlevels(genome))
+tmp$seqnames = as.character(tmp$seqnames)
+tmp$seqnames[tmp$seqnames == "chrM"] = "chrMT"
+tmp = GRanges(
+  seqnames = tmp$seqnames,
+  ranges = IRanges(start = tmp$start, end = tmp$start),
+  score = tmp$score,
+  strand = tmp$strand,
+  seqlengths = seqlengths(genome)
+)
+tmp = promoters(tmp,upstream = 1,downstream = 1)
+tmp = tmp[width(trim(tmp)) == 2]
+#tmp$dinucleotide = as.data.frame(getSeq(genome,tmp))$x
+tmp$dinucleotide = as.character(getSeq(genome, tmp))
+A = as.data.frame(tmp)[,c("score","dinucleotide")]
+dinucleotide = unique(A$dinucleotide)
+
+B = data.frame(dinucleotide=dinucleotide,sum_score=NA)
+for (i in dinucleotide) {
+  B[which(B$dinucleotide==i),]$sum_score<-sum(A[which(A$dinucleotide==i),]$score)
+}
+B$proportion = B$sum_score/sum(B$sum_score)
+B = B[order(B$proportion,decreasing=F),]
+B$dinucleotide = factor(B$dinucleotide,levels = B$dinucleotide)
+ggplot(data=B,
+       aes(x=factor(dinucleotide),
+           y=(proportion*100),
+           fill=dinucleotide)) +
+  geom_bar(stat="identity",
+           colour = "black",
+           linewidth = 0.3,
+           position=position_dodge()) +
+  ggtitle(paste0("Dominant TSS dinucleotide -/+ 1 bp proportion weighted by the sum of dominant TSS score per sample")) +
+  xlab("Initiator dinucleotide") +
+  ylab("Proportion of total per sample") +  
+  coord_flip() +
+  theme_bw() +
+  theme(text = element_text(size=10),
+        legend.key.size = unit(0.8,"cm"),
+        legend.position = 'none') +
+  scale_fill_viridis(option = "plasma",
+                     discrete = TRUE)
+#ggsave(filename = paste0(image_path,"TAG_weighted.pdf"),width = 12,height=10)
+```
+
+```{r}
+head(tmp$seqnames)
+seqnames(genome)  
+setdiff(seqlevels(tmp), seqlevels(genome))
+```
+
+```{r}
+plotReverseCumulatives(star_TSS, fitInRange = c(5, 1000))
+```
+
+```{r}
+pdf("/Users/pavel/Desktop/plotReverseCumulatives.pdf", width = 13, height = 7)
+#par(mfrow = c(5, 6), mar = c(4, 4, 2, 1))
+plotReverseCumulatives(star_TSS, fitInRange = c(5, 1000))
+dev.off()
+```
+
+```{r}
+# bad
+pdf("/Users/pavel/Desktop/plotCorrelation2.pdf", width = 20, height = 20)
+corr.m <- plotCorrelation2(star_TSS, samples = "all",
+                           tagCountThreshold = 1, applyThresholdBoth = FALSE,
+                           method = "pearson")
+dev.off()
+```
+
+```{r}
+#star_TSS = readRDS("/Users/pavel/Desktop/SoftclipG_CAGEexp_T2T_CHM13v2.0_annotated.RDS")
+tag_clusters = distclu(star_TSS, maxDist = 20, keepSingletonsAbove = 5)
+
+tagClustersGR(star_TSS) <- tag_clusters
+
+# paraclu
+star_TSS = cumulativeCTSSdistribution(star_TSS, clusters = "tagClusters", useMulticore = T)
+star_TSS = quantilePositions(star_TSS, clusters = "tagClusters", qLow = 0.1, qUp = 0.9)
+
+plotInterquantileWidth(star_TSS, clusters = "tagClusters", tpmThreshold = 3, qLow = 0.1, qUp = 0.9)
+```
+
+```{r}
+library(BSgenome.Hsapiens.NCBI.T2T.CHM13v2.0)
+genome = BSgenome.Hsapiens.NCBI.T2T.CHM13v2.0
+
+tmp = as.data.frame(CTSScoordinatesGR(object = star_TSS), row.names = NULL)
+scores_df = as.data.frame(CTSSnormalizedTpmDF(object = star_TSS))
+
+scores_df$seqnames = tmp$seqnames
+scores_df$start = tmp$start
+scores_df$strand = tmp$strand
+
+seqlevels(genome) = paste0("chr", seqlevels(genome))
+scores_df$seqnames = as.character(scores_df$seqnames)
+scores_df$seqnames[scores_df$seqnames == "chrM"] = "chrMT"
+valid_seqnames = seqlevels(genome)
+keep_rows = scores_df$seqnames %in% valid_seqnames
+scores_df = scores_df[keep_rows, ]
+tmp = tmp[keep_rows, ]
+
+tmp_gr = GRanges(
+  seqnames = scores_df$seqnames,
+  ranges = IRanges(start = scores_df$start, end = scores_df$start),
+  strand = scores_df$strand,
+  seqlengths = seqlengths(genome)
+)
+
+tmp_gr = promoters(tmp_gr, upstream = 1, downstream = 1)
+width_ok = width(trim(tmp_gr)) == 2
+tmp_gr = tmp_gr[width_ok]
+scores_df = scores_df[width_ok, ]
+
+scores_df$dinucleotide = as.character(getSeq(genome, tmp_gr))
+
+scores_df[] <- lapply(scores_df, function(x) if (is.numeric(x)) as.single(x) else x)
+```
+
+```{r}
+sample_cols = setdiff(colnames(scores_df), c("seqnames", "start", "strand", "dinucleotide"))
+
+result_list = list()
+
+# Loop through sample columns and compute proportions per dinucleotide
+for (sample in sample_cols) {
+  df = scores_df[, c("dinucleotide", sample)]
+  colnames(df) = c("dinucleotide", "score")
+  
+  df_sum = df %>%
+    group_by(dinucleotide) %>%
+    summarise(sum_score = sum(score), .groups = "drop") %>%
+    mutate(sample = sample,
+           proportion = sum_score / sum(sum_score))
+  
+  result_list[[sample]] = df_sum
+}
+
+B = bind_rows(result_list)
+
+dinuc_order = B %>%
+  group_by(dinucleotide) %>%
+  summarise(total_prop = sum(proportion)) %>%
+  arrange(total_prop) %>%
+  pull(dinucleotide)
+B$dinucleotide = factor(B$dinucleotide, levels = dinuc_order)
+
+B$sample = factor(B$sample, levels = sample_cols)
+
+net_cage_samples = c("H9hESC", "K562", "HepG2", "HeLaS3", "GM12878", "MCF7")
+B$experiment = ifelse(B$sample %in% net_cage_samples, "NET-CAGE", "CAGE")
+
+B$sample_ordered = reorder_within(B$sample, B$proportion, B$dinucleotide, fun = identity)
+
+#ggplot(B, aes(x = dinucleotide, y = proportion * 100, group=sample_ordered, fill = sample)) +
+ggplot(B, aes(x = dinucleotide, y = proportion * 100, group=sample_ordered, fill = experiment)) +
+  geom_bar(stat = "identity", position = position_dodge(width = 0.8), linewidth = 0.3) +
+  ggtitle("Dominant TSS dinucleotide -/+ 1 bp proportion weighted by the sum of dominant TSS score per sample") +
+  xlab("Initiator dinucleotide") +
+  ylab("Proportion of total per sample (%)") +
+  coord_flip() +
+  theme_bw() +
+  theme(text = element_text(size = 10),
+        legend.key.size = unit(0.8, "cm")) +
+  scale_fill_manual(values = c("CAGE" = "#4cc9f0", "NET-CAGE" = "#f07167"))
+#ggsave(filename = paste0("/Users/pavel/Desktop/","dom_tss_experiment.pdf"),width = 6,height=5)
+  #scale_fill_viridis(discrete = TRUE, option = "plasma")
+```
+
+```{r}
+B_net = B %>%
+  filter(experiment == "NET-CAGE")
+
+dinuc_order = B_net %>%
+  group_by(dinucleotide) %>%
+  summarise(total_prop = sum(proportion)) %>%
+  arrange(total_prop) %>%
+  pull(dinucleotide)
+B_net$dinucleotide = factor(B_net$dinucleotide, levels = dinuc_order)
+
+B_net$sample = factor(B_net$sample, levels = sample_cols)
+
+B_net$sample_ordered = reorder_within(B_net$sample, B_net$proportion, B_net$dinucleotide, fun = identity)
+
+B_cage = B %>%
+  filter(experiment == "CAGE")
+B_cage1 = B_cage %>%
+  slice(1:176)
+
+dinuc_order = B_cage1 %>%
+  group_by(dinucleotide) %>%
+  summarise(total_prop = sum(proportion)) %>%
+  arrange(total_prop) %>%
+  pull(dinucleotide)
+B_cage1$dinucleotide = factor(B_cage1$dinucleotide, levels = dinuc_order)
+
+B_cage1$sample = factor(B_cage1$sample, levels = sample_cols)
+
+B_cage1$sample_ordered = reorder_within(B_cage1$sample, B_cage1$proportion, B_cage1$dinucleotide, fun = identity)
+
+B_cage2 = B_cage %>%
+  slice(177:336)
+
+dinuc_order = B_cage2 %>%
+  group_by(dinucleotide) %>%
+  summarise(total_prop = sum(proportion)) %>%
+  arrange(total_prop) %>%
+  pull(dinucleotide)
+B_cage2$dinucleotide = factor(B_cage2$dinucleotide, levels = dinuc_order)
+
+B_cage2$sample = factor(B_cage2$sample, levels = sample_cols)
+
+B_cage2$sample_ordered = reorder_within(B_cage2$sample, B_cage2$proportion, B_cage2$dinucleotide, fun = identity)
+```
+
+```{r}
+ggplot(B_net, aes(x = dinucleotide, y = proportion * 100, group=sample, fill = sample)) +
+  geom_bar(stat = "identity", position = position_dodge(width = 0.8), linewidth = 0.3) +
+  ggtitle("Dominant TSS dinucleotide -/+ 1 bp proportion weighted by the sum of dominant TSS score per sample") +
+  xlab("Initiator dinucleotide") +
+  ylab("Proportion of total per sample (%)") +
+  coord_flip() +
+  theme_bw() +
+  theme(text = element_text(size = 10),
+        legend.key.size = unit(0.8, "cm"))
+ggsave(filename = paste0("/Users/pavel/Desktop/","dom_tss_net.pdf"),width = 6,height=5)
+```
+
+```{r}
+ggplot(B_cage1, aes(x = dinucleotide, y = proportion * 100, group=sample, fill = sample)) +
+  geom_bar(stat = "identity", position = position_dodge(width = 0.8), linewidth = 0.3) +
+  ggtitle("Dominant TSS dinucleotide -/+ 1 bp proportion weighted by the sum of dominant TSS score per sample") +
+  xlab("Initiator dinucleotide") +
+  ylab("Proportion of total per sample (%)") +
+  coord_flip() +
+  theme_bw() +
+  theme(text = element_text(size = 10),
+        legend.key.size = unit(0.8, "cm"))
+ggsave(filename = paste0("/Users/pavel/Desktop/","dom_tss_cage1.pdf"),width = 8,height=5)
+```
+
+```{r}
+ggplot(B_cage2, aes(x = dinucleotide, y = proportion * 100, group=sample, fill = sample)) +
+  geom_bar(stat = "identity", position = position_dodge(width = 0.8), linewidth = 0.5) +
+  ggtitle("Dominant TSS dinucleotide -/+ 1 bp proportion weighted by the sum of dominant TSS score per sample") +
+  xlab("Initiator dinucleotide") +
+  ylab("Proportion of total per sample (%)") +
+  coord_flip() +
+  theme_bw() +
+  theme(text = element_text(size = 10),
+        legend.key.size = unit(0.8, "cm"))
+ggsave(filename = paste0("/Users/pavel/Desktop/","dom_tss_cage2.pdf"),width = ,height=5)
+```
+
+```{r}
+ggplot(B, aes(x = sample, y = proportion * 100, fill = experiment)) +
+  geom_bar(stat = "identity", position = position_dodge(width = 0.8), linewidth = 0.3) +
+  facet_wrap(~ dinucleotide, nrow = 1, strip.position = "bottom") +
+  ggtitle("Dominant TSS dinucleotide -/+ 1 bp proportion weighted by the sum of dominant TSS score per sample") +
+  xlab("Sample") +
+  ylab("Proportion of total per sample (%)") +
+  theme_bw() +
+  theme(text = element_text(size = 10),
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "top",
+        strip.placement = "outside",
+        strip.text = element_text(size = 9),
+        panel.spacing = unit(1, "lines")) +
+  scale_fill_manual(values = c("CAGE" = "#21908CFF", "NET-CAGE" = "#FDE725FF"))
+
+```
+
+

@@ -1,0 +1,1072 @@
+wget --no-check-certificate https://t2t.gi.ucsc.edu/chm13/hub/t2t-chm13-v2.0/genome/t2t-chm13-v2.0.fa.gz
+wget --no-check-certificate https://t2t.gi.ucsc.edu/chm13/hub/t2t-chm13-v2.0/genome/t2t-chm13-v2.0.sizes
+
+#SBATCH --partition=nice
+#SBATCH --partition=compute
+
+#!/usr/bin/env bash
+#SBATCH --job-name=wget
+#SBATCH --error=wget-%j.err
+#SBATCH --output=wget-%j.log
+#SBATCH --time=8:00:00
+#SBATCH --partition=compute
+#SBATCH --nodes=1
+#SBATCH --cpus-per-task=2
+#SBATCH --mem=8G
+
+# Keratinocyte progenitor SE
+# MD5 046ff503b4ed35daba076fdd91fea607
+wget \
+    -nc ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR172/003/SRR1723253/SRR1723253.fastq.gz \
+    -O KeratinocyteProgenitor_L001_R1_001.fastq.gz
+
+# Hematopoietic stem/progenitor cells SE
+# MD5 046d04d155d0b1e6e3c78019420fd88f
+wget \
+    -nc ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR172/000/SRR1720190/SRR1720190.fastq.gz \
+    -O HematopoieticProgenitor_L001_R1_001.fastq.gz
+
+# Erythroid progenitors/precursors SE
+# MD5 095915bd53040a3f59e556f7ebd3c75c
+wget \
+    -nc ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR172/001/SRR1720191/SRR1720191.fastq.gz \
+    -O ErythroidProgenitor_L001_R1_001.fastq.gz
+
+# Myeloid progenitors/precursors SE
+# MD5 d728a0340c8145e19dc60e368690b3ee
+wget \
+    -nc ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR172/002/SRR1720192/SRR1720192.fastq.gz \
+    -O MyeloidProgenitor_L001_R1_001.fastq.gz
+
+# Fibroblast of dermis aniso1 SE
+# MD5 b43d322b489b0d416e7c2014cd356a47
+wget \
+    -nc https://www.encodeproject.org/files/ENCFF000USW/@@download/ENCFF000USW.fastq.gz \
+    -O FibroblastDermisAniso1_L001_R1_001.fastq.gz
+
+# Fibroblast of dermis aniso2 SE
+# MD5 7c15e090180a3b883344bf0f2ac3d730
+wget \
+    -nc https://www.encodeproject.org/files/ENCFF000USV/@@download/ENCFF000USV.fastq.gz \
+    -O FibroblastDermisAniso2_L001_R1_001.fastq.gz
+
+# Skeletal muscle satellite cell aniso1 SE
+# MD5 2e86d7546804759d5105ce1d9deb9bc6
+wget \
+    -nc https://www.encodeproject.org/files/ENCFF000UWW/@@download/ENCFF000UWW.fastq.gz \
+    -O SkeletalMuscleSatelliteAniso1_L001_R1_001.fastq.gz
+
+# Skeletal muscle satellite cell aniso2 SE
+# MD5 7bc5587bcdd437ed5562fe89d9ece389
+wget \
+    -nc https://www.encodeproject.org/files/ENCFF000UWZ/@@download/ENCFF000UWZ.fastq.gz \
+    -O SkeletalMuscleSatelliteAniso2_L001_R1_001.fastq.gz
+
+# Keratinocyte iso1 SE
+# MD5 e36c75543fd9e57d3254ab9ab082d6be
+wget \
+    -nc https://www.encodeproject.org/files/ENCFF000UTO/@@download/ENCFF000UTO.fastq.gz \
+    -O KeratinocyteIso1_L001_R1_001.fastq.gz
+
+# Keratinocyte iso2 SE
+# MD5 4e735ecd76e55d3e1b47f0b299b67adf
+wget \
+    -nc https://www.encodeproject.org/files/ENCFF000UTQ/@@download/ENCFF000UTQ.fastq.gz \
+    -O KeratinocyteIso2_L001_R1_001.fastq.gz
+
+# Villous Mesenchyme Aniso1 SE 51
+# MD5 5fc59df23edea28a3d417e10d474fe45
+wget \
+    -nc https://www.encodeproject.org/files/ENCFF000UKV/@@download/ENCFF000UKV.fastq.gz \
+    -O VillousMesenchymeAniso1_L001_R1_001.fastq.gz
+
+# Villous Mesenchyme Aniso2 SE 51
+# MD5 101789c4fb73ae904a468529be5063f0
+wget \
+    -nc https://www.encodeproject.org/files/ENCFF000ULB/@@download/ENCFF000ULB.fastq.gz \
+    -O VillousMesenchymeAniso2_L001_R1_001.fastq.gz
+
+# Osteoblast Aniso1 SE 51
+# MD5 b2b468f53cfffef591e5373590e2baf2
+wget \
+    -nc https://www.encodeproject.org/files/ENCFF000UHD/@@download/ENCFF000UHD.fastq.gz \
+    -O OsteoblastAniso1_L001_R1_001.fastq.gz
+
+# Osteoblast Aniso2 SE 51
+# MD5 f0eb0e43c546394631334cfcab12379d
+wget \
+    -nc https://www.encodeproject.org/files/ENCFF000UHH/@@download/ENCFF000UHH.fastq.gz \
+    -O OsteoblastAniso2_L001_R1_001.fastq.gz
+
+# Input CSV
+sample,fastq_1,fastq_2,single_end
+erythroid_progenitor,/home/pnikitin/cage/data/ErythroidProgenitor_L001_R1_001.fastq.gz,,True
+fibroblast_dermis_aniso1,/home/pnikitin/cage/data/FibroblastDermisAniso1_L001_R1_001.fastq.gz,,True
+fibroblast_dermis_aniso2,/home/pnikitin/cage/data/FibroblastDermisAniso2_L001_R1_001.fastq.gz,,True
+hematopoietic_progenitor,/home/pnikitin/cage/data/HematopoieticProgenitor_L001_R1_001.fastq.gz,,True
+osteoblast_aniso1,/home/pnikitin/cage/data/OsteoblastAniso1_L001_R1_001.fastq.gz,,True
+osteoblast_aniso2,/home/pnikitin/cage/data/OsteoblastAniso2_L001_R1_001.fastq.gz,,True
+villous_mesenchyme_aniso1,/home/pnikitin/cage/data/VillousMesenchymeAniso1_L001_R1_001.fastq.gz,,True
+villous_mesenchyme_aniso2,/home/pnikitin/cage/data/VillousMesenchymeAniso2_L001_R1_001.fastq.gz,,True
+keratinocyte_progenitor,/home/pnikitin/cage/data/KeratinocyteProgenitor_L001_R1_001.fastq.gz,,True
+myeloid_progenitor,/home/pnikitin/cage/data/MyeloidProgenitor_L001_R1_001.fastq.gz,,True
+skeletal_muscle_satellite_aniso1,/home/pnikitin/cage/data/SkeletalMuscleSatelliteAniso1_L001_R1_001.fastq.gz,,True
+skeletal_muscle_satellite_aniso2,/home/pnikitin/cage/data/SkeletalMuscleSatelliteAniso2_L001_R1_001.fastq.gz,,True
+
+keratinocyte_iso1,/home/victor_spangerberg/cage/data/KeratinocyteIso1_L001_R1_001.fastq.gz,,True
+keratinocyte_iso2,/home/victor_spangerberg/cage/data/KeratinocyteIso2_L001_R1_001.fastq.gz,,True
+
+#!/usr/bin/env bash
+#SBATCH --job-name=cageflow
+#SBATCH --error=cageflow-%j.err
+#SBATCH --output=cageflow-%j.log
+#SBATCH --time=8:00:00
+#SBATCH --partition=compute
+#SBATCH --nodes=3
+#SBATCH --cpus-per-task=10
+#SBATCH --mem=20G
+
+conda activate nf
+module load apptainer
+
+nextflow run customcageq/main.nf \
+    --bsgenome /home/pnikitin/cage/genome/BSgenome.Hsapiens.NCBI.T2T.CHM13v2.0_1.5.0.tar.gz \
+    --fasta /home/pnikitin/cage/genome/t2t-chm13-v2.0.fa \
+    --chromsizes /home/pnikitin/cage/genome/t2t-chm13-v2.0.sizes \
+    --samplesheet /home/pnikitin/cage/input_reads.csv \
+    -profile singularity
+
+
+ssh -i /Users/pavel/Desktop/vpn_armenia/ssh/id_rsa victor_spangerberg@93.187.163.164 -p 13679 -vv
+OpenSSH_8.6p1, LibreSSL 3.3.6
+debug1: Reading configuration data /Users/pavel/.ssh/config
+debug1: Reading configuration data /etc/ssh/ssh_config
+debug1: /etc/ssh/ssh_config line 21: include /etc/ssh/ssh_config.d/* matched no files
+debug1: /etc/ssh/ssh_config line 54: Applying options for *
+debug1: /etc/ssh/ssh_config line 58: Applying options for *
+debug2: resolve_canonicalize: hostname 93.187.163.164 is address
+debug1: Authenticator provider $SSH_SK_PROVIDER did not resolve; disabling
+debug1: Connecting to 93.187.163.164 [93.187.163.164] port 13679.
+debug1: connect to address 93.187.163.164 port 13679: Network is unreachable
+ssh: connect to host 93.187.163.164 port 13679: Network is unreachable
+
+traceroute 93.187.163.164
+traceroute to 93.187.163.164 (93.187.163.164), 64 hops max, 52 byte packets
+ 1  10.200.2.1 (10.200.2.1)  84.521 ms  83.423 ms  71.551 ms
+ 2  93.187.161.85 (93.187.161.85)  71.733 ms  72.372 ms  70.938 ms
+ 3  spro-2-c4000.asnet.am (93.187.161.9)  74.927 ms  75.219 ms  73.653 ms
+ 4  93.187.161.94 (93.187.161.94)  81.684 ms  73.822 ms  73.839 ms
+ 5  93.187.161.94 (93.187.161.94)  3163.950 ms !H  3197.589 ms !H  3203.317 ms !H
+
+ssh -i /Users/pavel/Desktop/vpn_armenia/ssh/id_rsa victor_spangerberg@93.187.163.164 -p 13679
+victor_spangerberg@93.187.163.164: Permission denied (publickey).
+
+scp -i /Users/pavel/Desktop/vpn_armenia/ssh/id_rsa -P 13679 victor_spangerberg@93.187.163.164:~/cage/annotations/hor_strandedness_wa_wb.tsv .
+
+bedtools intersect -a censat_hor_no_strand_Y.bed -b ASat_hor_strand_Y.bed -wa -wb > hor_strandedness_wa_wb.tsv
+
+chrY    10565750        10883085        hor_Y_1(S4CYH1L)        100     -       10565750        10883085       250,0,0 chrY    10565749        10883084        Ga      147     -       10565749        10883084       255,0,0
+
+3. Полученные BAM-файлы (BAM1) пересечь с аннотацией HOR и получить центромерные BAM-файлы (BAM1-cen) и нецентромерные BAM-файлы (BAM1-noncen).
+
+# samtools view -b -L censat_hor_with_strand_R.bed BAM1.bam > BAM1_cen.bam
+bedtools intersect -abam BAM1.bam -b censat_hor_with_strand_R.bed > BAM1_cen.bam
+bedtools intersect -abam BAM1.bam -b censat_hor_with_strand_R.bed -v > BAM1_noncen.bam
+
+4. Из BAM1 выделить не картировавшиеся риды (BAM1-u или FASTQ).
+
+samtools view -b -f 4 BAM1.bam > BAM1_u.bam
+samtools fastq BAM1_u.bam > BAM1_u.fastq
+
+5. Из BAM1-cen выписать риды в FASTQ.
+
+samtools fastq BAM1_cen.bam > BAM1_cen.fastq
+
+6. Слить BAM1-cen и BAM1-u в BAM1-remap для последующего перекартирования.
+
+cat BAM1_cen.fastq BAM1_u.fastq > BAM1_remap.fastq
+
+ErythroidProgenitor_L001_R1_001.fastq.gz            VillousMesenchymeAniso1_L001_R1_001.fastq.gz
+FibroblastDermisAniso1_L001_R1_001.fastq.gz         VillousMesenchymeAniso2_L001_R1_001.fastq.gz
+FibroblastDermisAniso2_L001_R1_001.fastq.gz         command.out
+HematopoieticProgenitor_L001_R1_001.fastq.gz        leftover
+KeratinocyteProgenitor_L001_R1_001.fastq.gz         nohup.out
+MyeloidProgenitor_L001_R1_001.fastq.gz              wget-56297.err
+OsteoblastAniso1_L001_R1_001.fastq.gz               wget-56297.log
+OsteoblastAniso2_L001_R1_001.fastq.gz               wget.sbatch
+SkeletalMuscleSatelliteAniso1_L001_R1_001.fastq.gz  wget2.sbatch
+SkeletalMuscleSatelliteAniso2_L001_R1_001.fastq.gz
+
+sample,fastq_1,fastq_2,single_end
+ErythroidProgenitor,/home/victor_spangenberg/cage/data/ErythroidProgenitor_L001_R1_001.fastq.gz,,True
+FibroblastDermisAniso1,/home/victor_spangenberg/cage/data/FibroblastDermisAniso1_L001_R1_001.fastq.gz,,True
+FibroblastDermisAniso2,/home/victor_spangenberg/cage/data/FibroblastDermisAniso2_L001_R1_001.fastq.gz,,True
+HematopoieticProgenitor,/home/victor_spangenberg/cage/data/HematopoieticProgenitor_L001_R1_001.fastq.gz,,True
+KeratinocyteProgenitor,/home/victor_spangenberg/cage/data/KeratinocyteProgenitor_L001_R1_001.fastq.gz,,True
+MyeloidProgenitor,/home/victor_spangenberg/cage/data/MyeloidProgenitor_L001_R1_001.fastq.gz,,True
+SkeletalMuscleSatelliteAniso1,/home/victor_spangenberg/cage/data/SkeletalMuscleSatelliteAniso1_L001_R1_001.fastq.gz,,True
+SkeletalMuscleSatelliteAniso2,/home/victor_spangenberg/cage/data/SkeletalMuscleSatelliteAniso2_L001_R1_001.fastq.gz,,True
+OsteoblastAniso1,/home/victor_spangenberg/cage/data/OsteoblastAniso1_L001_R1_001.fastq.gz,,True
+OsteoblastAniso2,/home/victor_spangenberg/cage/data/OsteoblastAniso2_L001_R1_001.fastq.gz,,True
+VillousMesenchymeAniso1,/home/victor_spangenberg/cage/data/VillousMesenchymeAniso1_L001_R1_001.fastq.gz,,True
+VillousMesenchymeAniso2,/home/victor_spangenberg/cage/data/VillousMesenchymeAniso2_L001_R1_001.fastq.gz,,True
+
+genome generate does not consume .fa.gz, only .fa
+
+#!/usr/bin/env bash
+#SBATCH --job-name=bamextract
+#SBATCH --error=bamextract-%j.err
+#SBATCH --output=bamextract-%j.log
+#SBATCH --partition=compute
+#SBATCH --time=8:00:00
+#SBATCH --nodes=1
+#SBATCH --cpus-per-task=10
+#SBATCH --mem=20G
+
+conda init
+conda activate tools
+
+echo 'STARTED' at $(date)
+
+for SAMPLE in ErythroidProgenitor FibroblastDermisAniso1 FibroblastDermisAniso2 HematopoieticProgenitor KeratinocyteProgenitor MyeloidProgenitor OsteoblastAniso1 OsteoblastAniso2 SkeletalMuscleSatelliteAniso1 SkeletalMuscleSatelliteAniso2 VillousMesenchymeAniso1 VillousMesenchymeAniso2
+do
+    # Step 3
+    bedtools intersect -abam ${SAMPLE}.Aligned.sortedByCoord.out.bam -b censat_hor_with_strand_R.bed > ${SAMPLE}.BAM1_cen.bam
+    bedtools intersect -abam ${SAMPLE}.Aligned.sortedByCoord.out.bam -b censat_hor_with_strand_R.bed -v > ${SAMPLE}.BAM1_noncen.bam
+    # Step 4
+    samtools view -@ 10 -b -f 4 ${SAMPLE}.Aligned.sortedByCoord.out.bam > ${SAMPLE}.BAM1_u.bam
+    samtools fastq -@ 10 ${SAMPLE}.BAM1_u.bam > ${SAMPLE}.BAM1_u.fastq
+    # Step 5
+    samtools fastq -@ 10 ${SAMPLE}.BAM1_cen.bam > ${SAMPLE}.BAM1_cen.fastq
+    # Step 6
+    cat ${SAMPLE}.BAM1_cen.fastq ${SAMPLE}.BAM1_u.fastq > ${SAMPLE}.BAM1_remap_R1.fastq
+    gzip ${SAMPLE}.BAM1_remap_R1.fastq
+    echo 'DONE' ${SAMPLE} $(date)
+done
+
+echo 'FINISHED' at $(date)
+
+7. Перекартировать BAM1-remap полногеномно на ту же сборку с помощью STAR, разрешая большое максимальное количество мест картирования (100, 500, 1000, 2000, 5000) и требуя случайного выбора одного места картирования среди мест с наивысшим скором (--winAnchorMultimapNmax 5000 --outFilterMultimapNmax 5000 --outSAMmultNmax 1 --outMultimapperOrder Random). Обозначим результирующий BAM-файл как BAM2. (Таким образом, мы уточним позиции картирования центромерных ридов и, возможно, найдем дополнительные центромерные риды среди не картировавшихся ранее. Так как в BAM1-remap должно быть существенно меньше ридов, чем в исходной библиотеке – большинство должно было картироваться, притом вне центромеры, – мы можем перекартировать риды из BAM1-remap с гораздо больше допустимой повторностью.)
+
+Соорудить команду для STAR (лучше отдельно, не через пайплайн)
+Отсечки смотреть на двух образцах - и решить, какую берем
+# --outFilterMatchNminOverLread 0.9 \
+
+#!/usr/bin/env bash
+#SBATCH --job-name=starremap
+#SBATCH --error=starremap-%j.err
+#SBATCH --output=starremap-%j.log
+#SBATCH --partition=compute
+#SBATCH --time=8:00:00
+#SBATCH --nodes=1
+#SBATCH --cpus-per-task=8
+#SBATCH --mem=36G
+
+conda init
+conda activate star
+
+echo 'STARTED' at $(date)
+
+samplename=$1
+nmax=$2
+nmaxtwo=$3
+
+# --alignEndsType Extend5pOfRead1 \
+
+STAR \
+    --runThreadN 16 \
+    --genomeDir /home/victor_spangenberg/cage/results/star_genomegenerate/star \
+    --readFilesIn /home/victor_spangenberg/cage/bam/${samplename}.BAM1_remap_R1.fastq.gz \
+    --readFilesCommand gunzip -c \
+    --outTmpDir /home/victor_spangenberg/cage/bam/${samplename}_${nmax}_tmp \
+    --outSAMtype BAM SortedByCoordinate \
+    --alignEndsType Local \
+    --outWigType wiggle read1_5p \
+    --outWigNorm None \
+    --outSAMunmapped Within \
+    --outFilterMultimapNmax ${nmax} \
+    --winAnchorMultimapNmax ${nmaxtwo} \ # change to nmaxfive
+    --alignTranscriptsPerReadNmax 100000 \
+    --seedMultimapNmax 100000 \ # change to 1 000 000
+    --alignWindowsPerReadNmax 10000 \
+    --alignIntronMax 3420 \
+    --alignMatesGapMax 3420 \
+    --seedPerWindowNmax 100 \
+    --alignTranscriptsPerWindowNmax 50 \
+    --outMultimapperOrder Random \
+    --outSAMmultNmax 1 \
+    --outFileNamePrefix ${samplename}_${nmax}
+
+echo 'FINISHED' at $(date)
+
+8. Отобрать из BAM2 картировавшиеся риды (BAM2-m).
+
+samtools view -b -F 4 BAM2.bam > BAM2_m.bam
+
+9. Слить BAM1-noncen и BAM2-m с получением BAM3.
+
+cat BAM1_noncen.fastq BAM2_m.fastq > BAM3.fastq
+samtools merge BAM1_noncen.bam BAM2_m.bam BAM3.bam
+??? -rh rg.txt 
+
+10. (В случае парных ридов) Отфильтровать BAM3 по значениям SAM-флагов для правильно картированных пар ридов (BAM-final). BAM-final = BAM3 в случае одноконцевых ридов.
+
+send_star.sh
+
+samplename=$1
+
+./star.sh ${samplename} 10 20
+./star.sh ${samplename} 100 200
+./star.sh ${samplename} 1000 2000
+./star.sh ${samplename} 2000 4000
+./star.sh ${samplename} 3000 6000
+./star.sh ${samplename} 4000 8000
+./star.sh ${samplename} 5000 10000
+./star.sh ${samplename} 6000 12000
+./star.sh ${samplename} 10000 20000
+./star.sh ${samplename} 20000 40000
+./star.sh ${samplename} 50000 100000
+./star.sh ${samplename} 100000 200000
+
+/home/victor_spangenberg/cage/bam/ErythroidProgenitor.BAM1_remap_R1.fastq.gz
+
+# Cleaning the reads
+
+#!/usr/bin/env bash
+#SBATCH --job-name=trimgalore
+#SBATCH --error=trimgalore-%j.err
+#SBATCH --output=trimgalore-%j.log
+#SBATCH --time=2:00:00
+#SBATCH --partition=compute
+#SBATCH --nodes=1
+#SBATCH --cpus-per-task=10
+#SBATCH --mem=20G
+
+conda init
+conda activate tools
+
+echo 'STARTED' at $(date)
+
+for SAMPLE in ErythroidProgenitor HematopoieticProgenitor KeratinocyteProgenitor MyeloidProgenitor
+do
+    trim_galore \
+        --fastqc \
+        --clip_R1 9 \
+        --three_prime_clip_R1 3 \
+        --cores 10 \
+        --gzip \
+        ${SAMPLE}_L001_R1_001.fastq.gz
+    echo 'DONE' ${SAMPLE} $(date)
+done
+
+for SAMPLE in FibroblastDermisAniso1 FibroblastDermisAniso2 OsteoblastAniso1 OsteoblastAniso2 SkeletalMuscleSatelliteAniso1 SkeletalMuscleSatelliteAniso2 VillousMesenchymeAniso1 VillousMesenchymeAniso2
+do
+    trim_galore \
+        --fastqc \
+        --clip_R1 9 \
+        --three_prime_clip_R1 16 \
+        --cores 10 \
+        --gzip \
+        ${SAMPLE}_L001_R1_001.fastq.gz
+    echo 'DONE' ${SAMPLE} $(date)
+done
+
+trim_galore --fastqc --hardtrim5 9 --hardtrim3 3 --cores 4 --gzip
+
+#!/usr/bin/env bash
+
+#for SAMPLE in ErythroidProgenitor FibroblastDermisAniso1 FibroblastDermisAniso2 HematopoieticProgenitor KeratinocyteProgenitor MyeloidProgenitor OsteoblastAniso1 OsteoblastAniso2 SkeletalMuscleSatelliteAniso1 SkeletalMuscleSatelliteAniso2 VillousMesenchymeAniso1 VillousMesenchymeAniso2
+for SAMPLE in FibroblastDermisAniso2 HematopoieticProgenitor KeratinocyteProgenitor MyeloidProgenitor OsteoblastAniso1 OsteoblastAniso2 SkeletalMuscleSatelliteAniso1 SkeletalMuscleSatelliteAniso2 VillousMesenchymeAniso2
+do
+    echo ${SAMPLE}
+    samtools flagstat -@ 10 ${SAMPLE}_10Aligned.sortedByCoord.out.bam | grep 'mapped (' | head -1
+    samtools flagstat -@ 10 ${SAMPLE}_100Aligned.sortedByCoord.out.bam | grep 'mapped (' | head -1
+    samtools flagstat -@ 10 ${SAMPLE}_1000Aligned.sortedByCoord.out.bam | grep 'mapped (' | head -1
+    samtools flagstat -@ 10 ${SAMPLE}_2000Aligned.sortedByCoord.out.bam | grep 'mapped (' | head -1
+    samtools flagstat -@ 10 ${SAMPLE}_3000Aligned.sortedByCoord.out.bam | grep 'mapped (' | head -1
+    samtools flagstat -@ 10 ${SAMPLE}_4000Aligned.sortedByCoord.out.bam | grep 'mapped (' | head -1
+    samtools flagstat -@ 10 ${SAMPLE}_5000Aligned.sortedByCoord.out.bam | grep 'mapped (' | head -1
+    samtools flagstat -@ 10 ${SAMPLE}_6000Aligned.sortedByCoord.out.bam | grep 'mapped (' | head -1
+    samtools flagstat -@ 10 ${SAMPLE}_10000Aligned.sortedByCoord.out.bam | grep 'mapped (' | head -1
+    samtools flagstat -@ 10 ${SAMPLE}_20000Aligned.sortedByCoord.out.bam | grep 'mapped (' | head -1
+    samtools flagstat -@ 10 ${SAMPLE}_50000Aligned.sortedByCoord.out.bam | grep 'mapped (' | head -1
+    samtools flagstat -@ 10 ${SAMPLE}_100000Aligned.sortedByCoord.out.bam | grep 'mapped (' | head -1
+done
+
+#!/usr/bin/env bash
+
+echo 'STARTED' at $(date)
+
+for SAMPLE in ErythroidProgenitor FibroblastDermisAniso1 FibroblastDermisAniso2 HematopoieticProgenitor KeratinocyteProgenitor MyeloidProgenitor OsteoblastAniso1 OsteoblastAniso2 SkeletalMuscleSatelliteAniso1 SkeletalMuscleSatelliteAniso2 VillousMesenchymeAniso1 VillousMesenchymeAniso2
+do
+    echo ${SAMPLE}
+    # Read 1 5′ scRNA-seq reads with an unencoded G (which is tagged as a soft-clipped G by STARsolo (88)) were extracted from BAM files using SAMtools version 1.16.1 (101) as follows.
+
+    samtools view -@ 12 -H ${SAMPLE}_Aligned.sortedByCoord.out.bam > ${SAMPLE}_header.sam
+
+    # calculate properly substr(str, a, b)
+    samtools view -@ 12 -F 16 ${SAMPLE}_Aligned.sortedByCoord.out.bam | awk -F '\t' 'BEGIN {OFS="\t"} {BASE = substr($10, 40, 1); if ($6 ~ /^40S[0-9]/ && BASE == "G") {print $0}}' > ${SAMPLE}_SoftclipG_F.sam
+
+    # calculate properly substr(str, a, b)
+    samtools view -@ 12 -f 16 ${SAMPLE}_Aligned.sortedByCoord.out.bam | awk -F '\t' 'BEGIN {OFS="\t"} { ALT = substr($10, length($10)-39, 1); if ($6 ~ /[0-9]M40S$/ && ALT == "C") {print $0}}' > ${SAMPLE}_SoftclipG_R.sam
+
+    cat ${SAMPLE}_header.sam ${SAMPLE}_SoftclipG_F.sam ${SAMPLE}_SoftclipG_R.sam | samtools sort -@ 12 -O bam -o SoftclipG_${SAMPLE}.bam
+
+    echo 'DONE' ${SAMPLE} $(date)
+done
+
+#!/usr/bin/env bash
+
+echo 'STARTED' at $(date)
+
+for SAMPLE in ErythroidProgenitor FibroblastDermisAniso1 FibroblastDermisAniso2 HematopoieticProgenitor KeratinocyteProgenitor MyeloidProgenitor OsteoblastAniso1 OsteoblastAniso2 SkeletalMuscleSatelliteAniso1 SkeletalMuscleSatelliteAniso2 VillousMesenchymeAniso1 VillousMesenchymeAniso2
+do
+    # Step 4
+    echo 'Step 4'
+    samtools view -@ 16 -b -f 4 ${SAMPLE}.Aligned.sortedByCoord.out.bam > ${SAMPLE}.BAM1_u.bam
+    samtools view -@ 16 -b -F 4 ${SAMPLE}.Aligned.sortedByCoord.out.bam > ${SAMPLE}.BAM1_m.bam
+    # Step 5
+    echo 'Step 5'
+    samtools view -@ 16 -H ${SAMPLE}.BAM1_m.bam > ${SAMPLE}_header.BAM1_m.sam
+    samtools view -@ 16 -F 16 ${SAMPLE}.BAM1_m.bam | awk -F '\t' 'BEGIN {OFS="\t"} {BASE = substr($10, 1, 1); if ($6 ~ /^1S[0-9]/ && BASE == "G") {print $0}}' > ${SAMPLE}_SoftclipG_F.BAM1_m.sam
+    samtools view -@ 16 -f 16 ${SAMPLE}.BAM1_m.bam | awk -F '\t' 'BEGIN {OFS="\t"} { ALT = substr($10, length($10)-1, 1); if ($6 ~ /[0-9]M1S$/ && ALT == "C") {print $0}}' > ${SAMPLE}_SoftclipG_R.BAM1_m.sam
+    cat ${SAMPLE}_header.BAM1_m.sam ${SAMPLE}_SoftclipG_F.BAM1_m.sam ${SAMPLE}_SoftclipG_R.BAM1_m.sam | samtools sort -@ 16 -O bam -o ${SAMPLE}.BAM1_m_filt.bam
+    # Step 6
+    echo 'Step 6'
+    bedtools intersect -abam ${SAMPLE}.BAM1_m_filt.bam -b censat_hor_with_strand_R.bed > ${SAMPLE}.BAM1_m_filt_cen.bam
+    bedtools intersect -abam ${SAMPLE}.BAM1_m_filt.bam -b censat_hor_with_strand_R.bed -v > ${SAMPLE}.BAM1_m_filt_noncen.bam
+    # Step 7
+    echo 'Step 7'
+    samtools fastq -@ 16 ${SAMPLE}.BAM1_u.bam > ${SAMPLE}.BAM1_u.fastq
+    samtools fastq -@ 16 ${SAMPLE}.BAM1_m_filt_cen.bam > ${SAMPLE}.BAM1_m_filt_cen.fastq
+    cat ${SAMPLE}.BAM1_m_filt_cen.fastq ${SAMPLE}.BAM1_u.fastq > ${SAMPLE}.BAM1_remap_R1.fastq
+    gzip ${SAMPLE}.BAM1_remap_R1.fastq
+    echo 'DONE' ${SAMPLE} $(date)
+done
+
+New strategy
+1. DONE Отрезать адаптеры 
+2. DONE Отбираем G-стартующие риды (awk или библиотекой)
+3. DONE Маппим с помощью пайплайна CAGEflow:
+    --alignEndsType Local
+    --outFilterMultimapNmax 10
+    --winAnchorMultimapNmax 20
+    --outSAMmultNmax 1
+    --outMultimapperOrder Random
+4. DONE Разделить BAM1 на BAM1-m и BAM1-u.
+5. DONE Сделаем отбор картирования с первой некартированной G и последующими картированными позициями в BAM1-m с помощью скрипта из статьи. Обозначим результирующий BAM-файл как BAM1-m-filt.
+6. DONE Полученные BAM1-m-filt пересечь с аннотацией HOR и получить центромерные BAM-файлы (BAM1-m-filt-cen) и нецентромерные BAM-файлы (BAM1-m-filt-noncen).
+7. DONE Из BAM1-m-filt-cen и BAM1-u выписать риды в FASTQ1-remap для последующего перекартирования.
+8. Перекартируем FASTQ1-remap как указано выше с новыми параметрами. Обозначим результирующий BAM-файл как BAM2.
+9. Сделаем отбор картирования с первой некартированной G и последующими картированными позициями в BAM2 с помощью скрипта из статьи. Обозначим результирующий BAM-файл как BAM2-m-filt.
+10. Полученные BAM2-m-filt пересечь с аннотацией HOR и получить центромерные BAM-файлы (BAM2-m-filt-cen) и нецентромерные BAM-файлы (BAM2-m-filt-noncen). Посмотреть, сколько ридов в BAM2-m-filt-noncen. Мы ожидаем, что их будет немного и тогда ими можно пернебречь.
+11. Слить BAM1-m-filt-noncen и BAM2-m-filt-cen с получением BAM3. BAM-final = BAM3 в случае одноконцевых ридов.
+12. Оценить качество библиотек по статистикам samtools (% картировавшихся ридов и т. д.). Отобрать библиотеки по необходимости.
+13. Используя bedtools genomecov -bg -strand +/- -5, получить bedGraph-файлы цепь-специфичных 5'-покрытий.Проверить, считает ли bedtools genomecov софт-клиппинг в качестве покрытия или он его пропускает.
+14. С помощью утилит UCSC преобразовать полученные bedGraph-файлы в цепь-специфичные bigWig.
+15. Смотрим на wig'и для QC (на белок-кодирующих генах)
+16. Дополнительно: оценка качества с помощью CAGEr
+
+#!/usr/bin/env bash
+
+echo 'STARTED' at $(date)
+
+for SAMPLE in ErythroidProgenitor FibroblastDermisAniso1 FibroblastDermisAniso2 HematopoieticProgenitor KeratinocyteProgenitor MyeloidProgenitor OsteoblastAniso1 OsteoblastAniso2 SkeletalMuscleSatelliteAniso1 SkeletalMuscleSatelliteAniso2 VillousMesenchymeAniso1 VillousMesenchymeAniso2
+do
+    zcat ${SAMPLE}_L001_R1_001.fastq.gz | awk '(NR % 4 == 2 && substr($0, 1, 1) == "G"){print last; print; getline; print; getline; print} {last=$0}' > ${SAMPLE}_L001_R1_001_G.fastq
+    gzip ${SAMPLE}_L001_R1_001_G.fastq
+    echo 'DONE' ${SAMPLE} $(date)
+done
+
+#!/usr/bin/env bash
+
+for SAMPLE in ErythroidProgenitor FibroblastDermisAniso1 FibroblastDermisAniso2 HematopoieticProgenitor KeratinocyteProgenitor MyeloidProgenitor OsteoblastAniso1 OsteoblastAniso2 SkeletalMuscleSatelliteAniso1 SkeletalMuscleSatelliteAniso2 VillousMesenchymeAniso1 VillousMesenchymeAniso2
+do
+    echo ${SAMPLE}
+    zcat ${SAMPLE}_L001_R1_001.fastq.gz | grep '^@' | wc -l
+    zcat ${SAMPLE}_L001_R1_001_G.fastq.gz | grep '^@' | wc -l
+done
+
+
+To extract all the reads that begin with the letter "G" from a FASTQ.GZ file, you can use a combination of command-line tools such as zcat, awk, or grep. Here's a step-by-step guide:
+
+Step 1: Understand the FASTQ File Format
+A FASTQ file consists of groups of four lines for each read:
+
+Header line (starts with @)
+Sequence line
+Separator line (starts with +)
+Quality line
+Your task is to identify sequences starting with "G" and output the full four-line block for each corresponding read.
+
+Step 2: Extract Reads Using zcat and awk
+You can use the following command:
+
+bash
+zcat file.fastq.gz | awk '(NR % 4 == 2 && substr($0, 1, 1) == "G"){print last; print; getline; print; getline; print} {last=$0}' > output.fastq
+Explanation:
+zcat file.fastq.gz: Decompresses the .gz file and streams its content.
+awk: Processes the streamed content:
+(NR % 4 == 2 && substr($0, 1, 1) == "G"): Checks if the current line is a sequence line (NR % 4 == 2) and starts with "G".
+If the condition is true, it prints the header (last), the sequence line, and the next two lines.
+{last=$0}: Keeps track of the previous line as the header line.
+
+Statistics:
+sample                    5-prime-G-content mapped
+ErythroidProgenitor           89.24%        97.34%
+FibroblastDermisAniso1        86.47%        97.19%
+FibroblastDermisAniso2        89.81%        93.70%
+HematopoieticProgenitor       87.29%        96.21%
+KeratinocyteProgenitor        87.36%        94.73%
+MyeloidProgenitor             74.60%        93.65%
+OsteoblastAniso1              89.99%        93.62%
+OsteoblastAniso2              89.75%        93.30%
+SkeletalMuscleSatelliteAniso1 88.84%        97.38%
+SkeletalMuscleSatelliteAniso2 88.26%        97.12%
+VillousMesenchymeAniso1       89.29%        94.09%
+VillousMesenchymeAniso2       90.72%        94.37%
+
+#for SAMPLE in VillousMesenchymeAniso1_10 VillousMesenchymeAniso1_100 VillousMesenchymeAniso1_1000 VillousMesenchymeAniso1_2000 VillousMesenchymeAniso1_3000 VillousMesenchymeAniso1_4000 VillousMesenchymeAniso1_5000 VillousMesenchymeAniso1_6000 VillousMesenchymeAniso1_10000 VillousMesenchymeAniso1_20000 VillousMesenchymeAniso1_50000 VillousMesenchymeAniso1_100000
+
+for SAMPLE in KeratinocyteProgenitor ErythroidProgenitor HematopoieticProgenitor MyeloidProgenitor SkeletalMuscleSatelliteAniso2 VillousMesenchymeAniso2  FibroblastDermisAniso1 FibroblastDermisAniso2 OsteoblastAniso1 OsteoblastAniso2 SkeletalMuscleSatelliteAniso1 VillousMesenchymeAniso1 
+do
+
+bedtools intersect -abam KeratinocyteProgenitor_3000Aligned.out.bam -b ../censat_hor_with_strand_R.bed > SkeletalMuscleSatelliteAniso2_3000.cen.bam
+
+bedtools intersect -abam ${SAMPLE}Aligned.out.bam -b ../censat_hor_with_strand_R.bed | samtools view | wc -l
+
+# Analysis of unmapped reads in uT field
+samtools view ${SAMPLE}Aligned.out.bam -f 4 | awk '{print $1, $16}' | awk -F":" '{print $3}' | sort | uniq -c
+
+bedtools intersect -abam KeratinocyteProgenitor_4000Aligned.out.bam -b censat_hor_with_strand_R.bed > KeratinocyteProgenitor_4000.cen.bam
+
+samtools view KeratinocyteProgenitor_4000Aligned.out.bam -f 4 | awk '{print $1, $16}'
+
+./star.sh ${SAMPLE} 10 50
+./star.sh ${SAMPLE} 100 500
+./star.sh ${SAMPLE} 1000 5000
+./star.sh ${SAMPLE} 2000 10000
+./star.sh ${SAMPLE} 3000 15000
+./star.sh ${SAMPLE} 4000 20000
+./star.sh ${SAMPLE} 5000 25000
+./star.sh ${SAMPLE} 6000 30000
+./star.sh ${SAMPLE} 10000 50000
+./star.sh ${SAMPLE} 20000 100000
+./star.sh ${SAMPLE} 50000 250000
+./star.sh ${SAMPLE} 100000 500000
+
+cat 3000_unmapped.sam | awk '{print $1, $16}' | tr -d 'uT:A:' > 3000_umapped.stats
+cat 2000_mapped.sam | awk '{print $1}' > 2000_mapped.stats
+cat 3000_unmapped.sam | awk '{print $1}' > 3000_unmapped.matches
+
+grep -Fx -f 2000_mapped.stats 3000_unmapped.matches
+grep -Fx -f <(cut -d' ' -f1 3000_umapped.stats) matches.txt
+grep -E -f <(awk '{print "^" $1 "\\b"}' matches.txt) 3000_umapped.stats
+
+4271 0
+49 3
+
+samtools view -f 4 KeratinocyteProgenitor_100000Aligned.out.bam > 100000_unmapped.sam
+cat 100000_unmapped.sam | awk '{print $1, $16}' | tr -d 'uT:A:' > 100000_umapped.stats
+join -1 1 -2 1 <(sort 4000_umapped.stats) <(sort 100000_umapped.stats)
+awk -F" " '{print $2, $3}' 4k_to_100k_stats.txt | sort | uniq -c
+  45729 0 0
+   2406 1 0
+ 309132 1 1
+    459 3 0
+
+awk -F'\t' '{if ( $4 == "J1" || $4 == "J2" || $4 == "W1" || $4 == "W2" || $4 == "W3" || $4 == "W4" || $4 == "W5" || $4 == "R1" || $4 == "R2" ) {print}}' ASat_strand.bed > ASat_jwr.bed
+bedtools getfasta -fi t2t-chm13-v2.0.fa -bed ASat_jwr_sele_intervals.bed -fo t2t-chm13-v2.0.centromeres.fa
+
+#!/usr/bin/env bash
+
+STAR \
+    --runMode genomeGenerate \
+    --genomeDir star/ \
+    --genomeFastaFiles t2t-chm13-v2.0.centromeres.fa \
+    --runThreadN 10
+
+./star.sh ${SAMPLE} star_reg1 10 50
+./star.sh ${SAMPLE} star_reg1 100 500
+./star.sh ${SAMPLE} star_reg1 1000 5000
+./star.sh ${SAMPLE} star_reg1 2000 10000
+./star.sh ${SAMPLE} star_reg1 3000 15000
+./star.sh ${SAMPLE} star_reg1 4000 20000
+./star.sh ${SAMPLE} star_reg1 5000 25000
+./star.sh ${SAMPLE} star_reg1 6000 30000
+./star.sh ${SAMPLE} star_reg1 10000 50000
+./star.sh ${SAMPLE} star_reg1 20000 100000
+./star.sh ${SAMPLE} star_reg1 50000 250000
+./star.sh ${SAMPLE} star_reg1 100000 500000
+
+./star.sh ${SAMPLE} star_reg2 10 50
+./star.sh ${SAMPLE} star_reg2 100 500
+./star.sh ${SAMPLE} star_reg2 1000 5000
+./star.sh ${SAMPLE} star_reg2 2000 10000
+./star.sh ${SAMPLE} star_reg2 3000 15000
+./star.sh ${SAMPLE} star_reg2 4000 20000
+./star.sh ${SAMPLE} star_reg2 5000 25000
+./star.sh ${SAMPLE} star_reg2 6000 30000
+./star.sh ${SAMPLE} star_reg2 10000 50000
+./star.sh ${SAMPLE} star_reg2 20000 100000
+./star.sh ${SAMPLE} star_reg2 50000 250000
+./star.sh ${SAMPLE} star_reg2 100000 500000
+
+./star.sh ${SAMPLE} star_reg3 10 50
+./star.sh ${SAMPLE} star_reg3 100 500
+./star.sh ${SAMPLE} star_reg3 1000 5000
+./star.sh ${SAMPLE} star_reg3 2000 10000
+./star.sh ${SAMPLE} star_reg3 3000 15000
+./star.sh ${SAMPLE} star_reg3 4000 20000
+./star.sh ${SAMPLE} star_reg3 5000 25000
+./star.sh ${SAMPLE} star_reg3 6000 30000
+./star.sh ${SAMPLE} star_reg3 10000 50000
+./star.sh ${SAMPLE} star_reg3 20000 100000
+./star.sh ${SAMPLE} star_reg3 50000 250000
+./star.sh ${SAMPLE} star_reg3 100000 500000
+
+samtools flagstat -@ 10 SkeletalMuscleSatelliteAniso2_star_regall_2000_toCentromere_Aligned.out.bam | grep 'mapped (' | head -1
+samtools flagstat -@ 10 SkeletalMuscleSatelliteAniso2_regall_2000.BAM1_m_filt.bam | grep 'mapped (' | head -1
+
+${SAMPLE}_star_${reg}_${nmax}_toCentromere_Aligned.out.bam
+
+#Generete reads
+wgsim -e 0 -N 200000 -1 25 -2 25 -r 0 -R 0 -X 0 -S 1 t2t-chm13-v2.0.reg1.centromeres.fa reg1_simulated_1.fastq reg1_simulated_2.fastq
+wgsim -e 0 -N 200000 -1 25 -2 25 -r 0 -R 0 -X 0 -S 1 t2t-chm13-v2.0.reg2.centromeres.fa reg2_simulated_1.fastq reg2_simulated_2.fastq
+wgsim -e 0 -N 200000 -1 25 -2 25 -r 0 -R 0 -X 0 -S 1 t2t-chm13-v2.0.reg3.centromeres.fa reg3_simulated_1.fastq reg3_simulated_2.fastq
+
+./star.sh reg3_simulated star_reg2 1000 5000
+samtools flagstat -@ 10 reg3_simulated_star_reg2_1000_toCentromere_Aligned.out.bam | grep 'mapped (' | head -1
+
+mv reg1_simulated.fastq.gz reg1_simulated.BAM1_remap_R1.fastq.gz
+
+
+wget \
+    -nc ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR141/027/SRR14199827/SRR14199827.fastq.gz \
+    -O H9hESC_L001_R1_001.fastq.gz
+wget \
+    -nc ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR764/002/SRR7641292/SRR7641292.fastq.gz \
+    -O K562_L001_R1_001.fastq.gz
+wget \
+    -nc ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR764/004/SRR7641284/SRR7641284.fastq.gz \
+    -O HepG2_L001_R1_001.fastq.gz
+wget \
+    -nc ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR764/006/SRR7641276/SRR7641276.fastq.gz \
+    -O HeLaS3_L001_R1_001.fastq.gz
+wget \
+    -nc ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR764/000/SRR7641260/SRR7641260.fastq.gz \
+    -O GM12878_L001_R1_001.fastq.gz
+wget \
+    -nc ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR764/008/SRR7641248/SRR7641248.fastq.gz \
+    -O MCF7_L001_R1_001.fastq.gz
+
+H9hESC K562 HepG2 HeLaS3 GM12878 MCF7
+
+samtools flagstat -@ 10 reg3_simulated_star_reg2_1000_toCentromere_Aligned.out.bam | grep 'mapped (' | head -1
+
+#!/usr/bin/env bash
+wget \
+    -nc https://www.encodeproject.org/files/ENCFF000UTO/@@download/ENCFF000UTO.fastq.gz \
+    -O KeratinocyteFemale_L001_R1_001.fastq.gz
+wget \
+    -nc https://www.encodeproject.org/files/ENCFF000UJY/@@download/ENCFF000UJY.fastq.gz \
+    -O UmbilicalVeinCytosolicFraction_L001_R1_001.fastq.gz
+wget \
+    -nc https://www.encodeproject.org/files/ENCFF000TUD/@@download/ENCFF000TUD.fastq.gz \
+    -O BCell_L001_R1_001.fastq.gz
+wget \
+    -nc https://www.encodeproject.org/files/ENCFF000USN/@@download/ENCFF000USN.fastq.gz \
+    -O CD14PositiveMonocyte_L001_R1_001.fastq.gz
+wget \
+    -nc https://www.encodeproject.org/files/ENCFF000TZF/@@download/ENCFF000TZF.fastq.gz \
+    -O ArticularChondrocyteKneeJoint_L001_R1_001.fastq.gz
+wget \
+    -nc https://fantom.gsc.riken.jp/6/datafiles/Core_FANTOM6/RELEASE_latest/raw_data/Set6_human_dermal_lymphatic_vascular_endothelial_cells/CAGE/Set6_Ref/seqs/CNhi10692_160126_SN554_0289_AC8MB4ACXX_NoIndex_L005_R1_001.F6-006-RNA-000-00001-823B.AGT.fq.gz \
+    -O FANTOM6DermalLymphaticVascularEndothelialCells_L001_R1_001.fastq.gz
+wget \
+    -nc https://fantom.gsc.riken.jp/6/datafiles/Core_FANTOM6/RELEASE_latest/raw_data/Set5_human_dermal_blood_vascular_endothelial_cells/CAGE/Set5_Ref/seqs/CNhi10692_160126_SN554_0289_AC8MB4ACXX_NoIndex_L005_R1_001.F6-005-RNA-000-00001-7FD5.ACC.fq.gz \
+    -O FANTOM6DermalBloodVascularEndothelialCells_L001_R1_001.fastq.gz
+wget \
+    -nc https://fantom.gsc.riken.jp/6/datafiles/Core_FANTOM6/RELEASE_latest/raw_data/Set1_human_dermal_fibroblasts/CAGE/Set1_Run4/seqs/CNhi10521_150618_SN554_0261_AC72CJACXX_NoIndex_L002_R1_001.F6-001-RNA-005-05A01-C360.ATG.fq.gz \
+    -O FANTOM6DermalFibroblasts_L001_R1_001.fastq.gz
+wget \
+    -nc ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR168/006/SRR1686776/SRR1686776.fastq.gz \
+    -O BronchialSmoothMuscleCells_L001_R1_001.fastq.gz
+wget \
+    -nc  \
+    -O _L001_R1_001.fastq.gz
+
+for SAMPLE in KeratinocyteFemale UmbilicalVeinCytosolicFraction BCell CD14PositiveMonocyte ArticularChondrocyteKneeJoint FANTOM6DermalLymphaticVascularEndothelialCells FANTOM6DermalBloodVascularEndothelialCells FANTOM6DermalFibroblasts BronchialSmoothMuscleCells
+
+samtools flagstat -@ 10 SkeletalMuscleSatelliteAniso2_star_reg3_2000_toCentromere_Aligned.out.bam | grep 'mapped (' | head -1
+
+# Cleaning the reads part 2
+#!/usr/bin/env bash
+
+echo 'STARTED' at $(date)
+
+for SAMPLE in H9hESC
+do
+    trim_galore \
+        --fastqc \
+        --three_prime_clip_R1 2 \
+        --cores 8 \
+        --gzip \
+        -o /home/pnikitin/cage/data/trimmed \
+        ${SAMPLE}_L001_R1_001.fastq.gz
+    echo 'DONE' ${SAMPLE} $(date)
+done
+
+for SAMPLE in KeratinocyteFemale UmbilicalVeinCytosolicFraction
+do
+    trim_galore \
+        --fastqc \
+        --clip_R1 9 \
+        --three_prime_clip_R1 1 \
+        --cores 8 \
+        --gzip \
+        -o /home/pnikitin/cage/data/trimmed \
+        ${SAMPLE}_L001_R1_001.fastq.gz
+    echo 'DONE' ${SAMPLE} $(date)
+done
+
+for SAMPLE in BCell CD14PositiveMonocyte ArticularChondrocyteKneeJoint BronchialSmoothMuscleCells
+do
+    trim_galore \
+        --fastqc \
+        --clip_R1 9 \
+        --three_prime_clip_R1 16 \
+        --cores 8 \
+        --gzip \
+        -o /home/pnikitin/cage/data/trimmed \
+        ${SAMPLE}_L001_R1_001.fastq.gz
+    echo 'DONE' ${SAMPLE} $(date)
+done
+
+echo 'FINISHED' at $(date)
+
+#!/usr/bin/env bash
+wget \
+    -nc https://fantom.gsc.riken.jp/5/datafiles/latest/basic/human.primary_cell.CAGEScan/Small%2520Airway%2520Epithelial%2520Cells%252c%2520donor1.NCig10047.11256-116F5.hg19.GCTATA.5prime.fq.gz \
+    -O FANTOM5SmallAirwayEpithelialCells_L001_R1_001.fastq.gz
+wget \
+    -nc https://fantom.gsc.riken.jp/5/datafiles/latest/basic/human.primary_cell.CAGEScan/Small%2520Airway%2520Epithelial%2520Cells%252c%2520donor1.NCig10047.11256-116F5.hg19.GCTATA.3prime.fq.gz \
+    -O FANTOM5SmallAirwayEpithelialCells_L001_R2_001.fastq.gz
+
+wget \
+    -nc https://fantom.gsc.riken.jp/5/datafiles/latest/basic/human.primary_cell.CAGEScan/Mammary%2520Epithelial%2520Cell%252c%2520donor1.NCig10048.11273-116H4.hg19.GCTATA.5prime.fq.gz \
+    -O FANTOM5MammaryEpithelialCell_L001_R1_001.fastq.gz
+wget \
+    -nc https://fantom.gsc.riken.jp/5/datafiles/latest/basic/human.primary_cell.CAGEScan/Mammary%2520Epithelial%2520Cell%252c%2520donor1.NCig10048.11273-116H4.hg19.GCTATA.3prime.fq.gz \
+    -O FANTOM5MammaryEpithelialCell_L001_R2_001.fastq.gz
+
+wget \
+    -nc https://fantom.gsc.riken.jp/5/datafiles/latest/basic/human.primary_cell.CAGEScan/Skeletal%2520muscle%2520cells%2520differentiated%2520into%2520Myotubes%2520-%2520multinucleated%252c%2520donor1.NCig10050.11282-116I4.hg19.GCTATA.5prime.fq.gz \
+    -O FANTOM5SkeletalMuscleCells_L001_R1_001.fastq.gz
+wget \
+    -nc https://fantom.gsc.riken.jp/5/datafiles/latest/basic/human.primary_cell.CAGEScan/Skeletal%2520muscle%2520cells%2520differentiated%2520into%2520Myotubes%2520-%2520multinucleated%252c%2520donor1.NCig10050.11282-116I4.hg19.GCTATA.3prime.fq.gz \
+    -O FANTOM5SkeletalMuscleCells_L001_R2_001.fastq.gz
+
+wget \
+    -nc https://fantom.gsc.riken.jp/5/datafiles/latest/basic/human.primary_cell.CAGEScan/Placental%2520Epithelial%2520Cells%252c%2520donor1.NCig10049.11278-116H9.hg19.GCTATA.5prime.fq.gz \
+    -O FANTOM5PlacentalEpithelialCells_L001_R1_001.fastq.gz
+wget \
+    -nc https://fantom.gsc.riken.jp/5/datafiles/latest/basic/human.primary_cell.CAGEScan/Placental%2520Epithelial%2520Cells%252c%2520donor1.NCig10049.11278-116H9.hg19.GCTATA.3prime.fq.gz \
+    -O FANTOM5PlacentalEpithelialCells_L001_R2_001.fastq.gz
+
+wget \
+    -nc https://fantom.gsc.riken.jp/5/datafiles/latest/basic/human.primary_cell.CAGEScan/Endothelial%2520Cells%2520-%2520Aortic%252c%2520donor0.NCig10038.11207-116A1.hg19.GCTATA.5prime.fq.gz \
+    -O FANTOM5EndothelialCellsAortic_L001_R1_001.fastq.gz
+wget \
+    -nc https://fantom.gsc.riken.jp/5/datafiles/latest/basic/human.primary_cell.CAGEScan/Endothelial%2520Cells%2520-%2520Aortic%252c%2520donor0.NCig10038.11207-116A1.hg19.GCTATA.3prime.fq.gz \
+    -O FANTOM5EndothelialCellsAortic_L001_R2_001.fastq.gz
+
+wget \
+    -nc https://fantom.gsc.riken.jp/5/datafiles/latest/basic/human.primary_cell.CAGEScan/Preadipocyte%2520-%2520omental%252c%2520donor1.NCig10051.11468-119C1.hg19.GCTATA.5prime.fq.gz \
+    -O FANTOM5PreadipocyteOmental_L001_R1_001.fastq.gz
+wget \
+    -nc https://fantom.gsc.riken.jp/5/datafiles/latest/basic/human.primary_cell.CAGEScan/Preadipocyte%2520-%2520omental%252c%2520donor1.NCig10051.11468-119C1.hg19.GCTATA.3prime.fq.gz \
+    -O FANTOM5PreadipocyteOmental_L001_R2_001.fastq.gz
+
+    #!/usr/bin/env bash
+
+echo 'STARTED' at $(date)
+
+#!/usr/bin/env bash
+for SAMPLE in FANTOM5EndothelialCellsAortic FANTOM5MammaryEpithelialCell FANTOM5PlacentalEpithelialCells FANTOM5PreadipocyteOmental FANTOM5SkeletalMuscleCells FANTOM5SmallAirwayEpithelialCells
+do
+    trim_galore \
+        --fastqc \
+        --paired \
+        --clip_R1 6 \
+        --clip_R2 6 \
+        --trim-n \
+        --cores 8 \
+        --gzip \
+        -o /home/pnikitin/cage/data/trimmed \
+        ${SAMPLE}_L001_R1_001.fastq.gz \
+        ${SAMPLE}_L001_R2_001.fastq.gz
+    echo 'DONE' ${SAMPLE} $(date)
+done
+
+for SAMPLE in ArticularChondrocyteKneeJoint BCell BronchialSmoothMuscleCells CD14PositiveMonocyte H9hESC KeratinocyteFemale UmbilicalVeinCytosolicFraction K562 HepG2 HeLaS3 GM12878 MCF7 FANTOM6DermalLymphaticVascularEndothelialCells FANTOM6DermalBloodVascularEndothelialCells FANTOM6DermalFibroblasts ErythroidProgenitor FibroblastDermisAniso1 FibroblastDermisAniso2 HematopoieticProgenitor KeratinocyteProgenitor MyeloidProgenitor OsteoblastAniso1 OsteoblastAniso2 SkeletalMuscleSatelliteAniso1 SkeletalMuscleSatelliteAniso2 VillousMesenchymeAniso1 VillousMesenchymeAniso2
+
+samtools flagstat -@ 10 ${SAMPLE}.BAM1_m_filt.bam | grep 'mapped (' | head -1
+
+${SAMPLE}_star_regall_1000_toCentromere_Aligned.out.bam
+
+hisat2-build t2t-chm13-v2.0.centromeres.fa hisat_regall
+
+#!/usr/bin/env bash
+echo 'STARTED' at $(date)
+samplename=$1
+hisat2 \
+    -x hisat_regall \
+    -U /home/pnikitin/cage/data/${samplename}_L001_R1_001.fastq.gz \
+    -p 20 \
+    -k 1 \
+    --max-seeds 1000 | \
+    samtools view -b - | \
+    samtools sort -@ 10 -O bam -o ${samplename}_hisat_1000.bam -
+
+echo 'FINISHED' at $(date)
+
+samtools index 
+samtools sort H9hESC_star_regall_1000_toCentromere_Aligned_uniq.bam -o H9hESC_star_regall_1000_toCentromere_Aligned_uniq_sorted.bam
+
+samtools view -@ 10 -b -F 4 H9hESC_star_regall_1000_toCentromere_Aligned.out.bam > H9hESC_star_regall_1000_toCentromere_Aligned_uniq.bam
+
+for SAMPLE in KeratinocyteFemale UmbilicalVeinCytosolicFraction K562 HepG2 HeLaS3 GM12878 MCF7 FANTOM6DermalLymphaticVascularEndothelialCells FANTOM6DermalBloodVascularEndothelialCells FANTOM6DermalFibroblasts ErythroidProgenitor FibroblastDermisAniso2 HematopoieticProgenitor KeratinocyteProgenitor MyeloidProgenitor OsteoblastAniso1 OsteoblastAniso2 SkeletalMuscleSatelliteAniso1 VillousMesenchymeAniso1
+
+for SAMPLE in SkeletalMuscleSatelliteAniso2
+do
+    zcat ${SAMPLE}_L001_R1_001.fastq.gz | awk '(NR % 4 == 2 && substr($0, 1, 1) == "A"){print last; print; getline; print; getline; print} {last=$0}'
+    zcat ${SAMPLE}_L001_R1_001.fastq.gz | awk '(NR % 4 == 2 && substr($0, 1, 1) == "T"){print last; print; getline; print; getline; print} {last=$0}'
+    zcat ${SAMPLE}_L001_R1_001.fastq.gz | awk '(NR % 4 == 2 && substr($0, 1, 1) == "С"){print last; print; getline; print; getline; print} {last=$0}'
+    echo 'DONE' ${SAMPLE} $(date)
+done
+
+wgsim -e 0 -N 10000 -1 25 -2 25 -r 0 -R 0 -X 0 -S 1 5k_ref.fasta 5k_simulated_1.fastq 5k_simulated_2.fastq
+
+hisat2 -x 5k_ref -U 5k_simulated.fastq.gz -p 20 -k 5 --max-seeds 25 > 5k_simulated_5_25.sam
+    samtools view -b - | \
+    samtools sort -@ 10 -O bam -o ${samplename}_hisat_1000.bam -
+samtools view -f 256
+
+python3 get_random_reads.py 5k_simulated_1_5.sam 5k_simulated_1_5_sele.bam
+python3 get_random_reads.py 5k_simulated_5_25.sam 5k_simulated_5_25_sele.bam
+samtools view -F 256 5k_simulated_1_5.sam
+samtools view -F 256 5k_simulated_5_25.sam
+
+cat 5k_simulated_5_25.sam | cut -f1 | sort | uniq -c | sort -rn | head
+
+wgsim -e 0 -N 10000 -1 25 -2 25 -r 0 -R 0 -X 0 -S 1 t2t-chm13-v2.0.reg1.centromeres.fa 100k_simulated_1.fastq 100k_simulated_2.fastq
+
+hisat2-build t2t-chm13-v2.0.reg1.centromeres.fa 100k_reg1_ref
+
+hisat2 -x 100k_ref -U 100k_simulated.fastq.gz -p 20 -k 2000 --max-seeds 10000 > 100k_simulated_2000_10000.sam
+
+hisat2-build t2t-chm13-v2.0.fa t2t_chm13_ref -p 20
+
+#!/usr/bin/env bash
+
+fastqgzvar0=${fastqgz[0]}
+fastqgzvar1=${fastqgz[1]}
+
+paste <(zcat ${fastqgz[0]}) <(zcat ${fastqgz[1]}) | \
+    awk '{if (NR % 4 == 2 && substr($0, 1, 3) == "GGG") { \
+            print last; \
+            print $0; \
+            getline; \
+            print $0; \
+            getline; \
+            print $0; \
+        } else { \
+            last=$0; \
+            } \
+        }' > \
+        tmp.with_g.tsv
+
+<tmp.with_g.tsv cut -d$'\t' -f1 > \
+    ${fastqgzvar0%%.fq.gz}.with_ggg.fq
+<tmp.with_g.tsv cut -d$'\t' -f2 > \
+    ${fastqgzvar1%%.fq.gz}.with_ggg.fq
+
+bamCoverage -b input.bam --outFileName five_prime.bw --binSize 1 --Offset -1
+
+bedtools getfasta -fi t2t-chm13-v2.0.fa -bed censat_hor_with_strand_R.bed -fo t2t-chm13-v2.0.censat_hor_with_strand_R.fa
+
+hisat2-build t2t-chm13-v2.0.censat_hor_with_strand_R.fa t2t_whole_centromeres_ref -p 20
+scp pnikitin@84.252.133.0:~/cage/bam_hisat_map_to_centromere/t2t-chm13-v2.0.censat_hor_with_strand_R.fa .
+
+ArticularChondrocyteKneeJoint
+k maxseeds 1time >1times
+1    5    – 12 0
+10   50   – 1  11
+100  500  – 1  11
+1000 5000 – 1  11
+
+BCell
+k maxseeds 1time >1times
+1    5    – 1472 0
+10   50   – 54   1418
+100  500  – 54   1418
+1000 5000 – 54   1418
+
+CD14PositiveMonocyte
+k maxseeds 1time >1times
+1    5    – 282 0
+10   50   – 27  255
+100  500  – 27  255
+1000 5000 – 27  255
+
+ErythroidProgenitor
+1000 5000 – 6 94
+
+H9hESC
+1000 5000 – 173 454
+
+HeLaS3
+1000 5000 – 49 316
+
+K562
+1000 5000 – 48 94
+
+MCF7
+1000 5000 – 143 1119
+
+MyeloidProgenitor
+1000 5000 – 7 375
+
+samtools view your_file.bam | awk '{print $1, $3, $4}' > mappings.txt
+
+from collections import defaultdict
+
+# Read the extracted mapping data
+mapping_dict = defaultdict(set)
+
+with open("mappings.txt", "r") as f:
+    for line in f:
+        read_id, chrom, pos = line.strip().split()
+        mapping_dict[read_id].add((chrom, pos))  # Store unique positions
+
+# Count unique positions per read
+read_position_counts = {read: len(positions) for read, positions in mapping_dict.items()}
+
+# Display results
+for read, count in list(read_position_counts.items())[:10]:  # Show only first 10 reads
+    print(f"Read: {read}, Unique positions: {count}")
+
+# Save to a file if needed
+with open("unique_mapping_counts.txt", "w") as out_file:
+    for read, count in read_position_counts.items():
+        out_file.write(f"{read}\t{count}\n")
+
+bedtools intersect -a rmsk.bed -b censat_hor_with_strand_R.bed -wa > centromeric_rmsk.bed
+awk '$11 ~ /LINE|SINE|LTR|DNA|Retroposon|Transposon/' centromeric_rmsk.bed > centromeric_transposons.bed
+
+bedtools intersect -abam MCF7.whole_centromere.1G_XM_90.bam -b adjusted_centromeric_transposons_full_ranges.tsv > MCF7.whole_centromere.1G_XM_90.cen.transposons.bam
+
+samtools view HeLaS3.whole_centromere.1G_XM_90.bam | cut -f1 | sort | uniq -c | sort -k1nr
+
+samtools idxstats MCF7.whole_centromere.1G_XM_90.bam | cut -f1,3
+
+final_bams_centromere/t2t-chm13-v2.0.censat_hor_with_strand_R.fa
+
+cut -f1,2,3,4,6 centromeric_transposons.bed > centromeric_transposons_short.tsv
+cut -f1,2,3,4,6 censat_hor_with_strand_R.bed > hor_strands_short.tsv
+cut -f1,2,3,13,15 hor_strandedness.tsv > alpha_monomers_short.tsv
+
+bedtools bamtobed -i MCF7.whole_centromere.1G_XM_90.bam > MCF7.whole_centromere.1G_XM_90.bed
+
+
+bedtools coverage -counts -a adjusted_centromeric_transposons_full_ranges.bed -b MCF7.whole_centromere.1G_XM_90.bam | awk '{if ($7 >= 1) print}' | cut -f4,7 | awk '{sum[$1] += $2} END {for (i in sum) print i, sum[i]}' | sort -k2,2nr > MCF7.transposon_alignments.tsv
+
+# Reads between 2 monomers are counted twice
+bedtools coverage -counts -a adjusted_alpha_monomers_full_ranges.bed -b MCF7.whole_centromere.1G_XM_90.bam | awk '{if ($7 >= 1) print}' | cut -f4,7 | awk '{sum[$1] += $2} END {for (i in sum) print i, sum[i]}' | sort -k2,2nr > MCF7.whole_centromere.1G_XM_90.cen.alpha_monomers.frequency.tsv
+
+bedtools coverage -counts -a adjusted_hor_strands_full_ranges.bed -b MCF7.whole_centromere.1G_XM_90.bam | awk '{if ($7 >= 1) print}' | cut -f5,7 | awk '{sum[$1] += $2} END {for (i in sum) print i, sum[i]}' | sort -k2,2nr | less
+
+--readFilesCommand gunzip -c
+--alignEndsType Local
+--outSAMtype BAM SortedByCoordinate
+--outWigType wiggle read1_5p
+--outWigNorm None
+--outSAMunmapped Within
+--outFilterMultimapNmax 10
+--winAnchorMultimapNmax 20
+--outSAMmultNmax 1
+--outMultimapperOrder Random
+
+bowtie2-build t2t-chm13-v2.0.fa t2t_chm13_ref -p 20
+
+samtools view -@ 20 -F 256 ArticularChondrocyteKneeJoint.BAM_SoftclipG_bowtie2.bam -b | samtools view -@ 20 -F 20 - | wc -l
+samtools view -@ 20 -F 256 ArticularChondrocyteKneeJoint.BAM_SoftclipG_bowtie2.bam -b | samtools view -@ 20 -f 16 - | wc -l
+
+# remove 5G from FASTQ GZ
+zcat H9hESC_L001_R1_001.fastq.gz | awk '{if(NR%4==2 || NR%4==0) print substr($0,2); else print $0}' | gzip > H9hESC_L001_R1_001_G_removed.fastq.gz
+
+zcat H9hESC_L001_R1_001.fastq.gz | wc -l | awk '{print $1/4}'
+
+samtools view -@ 10 -b HeLaS3_Aligned.out.sam | samtools sort -@ 10 -O bam -o HeLaS3_star.bam
+
+samtools view -@ 10 BCell_hisat_whole_centromere_100k_500k.bam | awk '{print $6}' | sort | uniq -c | sort -k1nr | head -5
+
+bowtie2-build t2t-chm13-v2.0.reg1.centromeres.fa bowtie2_reg1 -p 20
+bowtie2-build t2t-chm13-v2.0.reg2.centromeres.fa bowtie2_reg2 -p 20
+bowtie2-build t2t-chm13-v2.0.reg3.centromeres.fa bowtie2_reg3 -p 20
+hisat2-build t2t-chm13-v2.0.reg1.centromeres.fa hisat2_reg1 -p 20
+hisat2-build t2t-chm13-v2.0.reg2.centromeres.fa hisat2_reg2 -p 20
+hisat2-build t2t-chm13-v2.0.reg3.centromeres.fa hisat2_reg3 -p 20
+
+bamCoverage -b BCell_hisat.bam --outFileName BCell_hisat_five_prime.bw --binSize 1 --Offset 1
+
+bowtie2-build t2t-chm13-v2.0.centromeres.fa t2t_chm13_ref_centromeres -p 20
+bowtie2-build t2t-chm13-v2.0.censat_hor_with_strand_R.fa t2t_hor_with_strand_centromeres_ref -p 20
+
+bigWigToWig HeLaS3.whole_centromere.1G_XM_90.no_transposons.bw HeLaS3.whole_centromere.1G_XM_90.no_transposons.wig
+awk '{if ($4>0) print}' HeLaS3.whole_centromere.1G_XM_90.no_transposons.wig > HeLaS3.whole_centromere.1G_XM_90.no_transposons.positions.tsv
+
+zcat reg3_simulated.fastq.gz | awk '(NR%4==2){print "G"$0; next} (NR%4==0){print "I"$0; next} {print}' | gzip > reg3_simulated_with_G.fastq.gz
+
+samtools view -@ 20 -F 20 reg3.300_1500_hisat_SoftclipG.bam | wc -l
+samtools view -@ 20 -f 16 reg3.300_1500_hisat_SoftclipG.bam | wc -l
+
+#!/usr/bin/env bash
+
+echo 'STARTED' at $(date)
+
+SAMPLES=(
+    "reg1"
+    "reg2"
+    "reg3"
+)
+
+for SAMPLE in "${SAMPLES[@]}"
+do
+    echo ${SAMPLE}
+    samtools view -@ 20 -H ${SAMPLE}_300_1500_hisat.bam > ${SAMPLE}_header.BAM.sam
+
+    samtools view -@ 20 -F 20 ${SAMPLE}_300_1500_hisat.bam | awk -F '\t' 'BEGIN {OFS="\t"} {BASE = substr($10, 1, 1); if ($6 ~ /^1S[0-9]/ && BASE == "G") {print $0}}' > ${SAMPLE}_SoftclipG_F.BAM.sam
+
+    samtools view -@ 20 -f 16 ${SAMPLE}_300_1500_hisat.bam | awk -F '\t' 'BEGIN {OFS="\t"} { ALT = substr($10, length($10)-1, 1); if ($6 ~ /[0-9]M1S$/ && ALT == "C") {print $0}}' > ${SAMPLE}_SoftclipG_R.BAM.sam
+
+    cat ${SAMPLE}_header.BAM.sam ${SAMPLE}_SoftclipG_F.BAM.sam ${SAMPLE}_SoftclipG_R.BAM.sam | \
+        samtools sort -@ 20 -O bam -o ${SAMPLE}.300_1500_hisat_SoftclipG.bam
+
+    rm ${SAMPLE}_header.BAM.sam
+    rm ${SAMPLE}_SoftclipG_F.BAM.sam
+    rm ${SAMPLE}_SoftclipG_R.BAM.sam
+
+    echo "DONE for ${SAMPLE} at $(date)"
+done
+
+samtools view -@ 20 HeLaS3.whole_centromere.1G_XM_90.bam | cut -f6 | sort | uniq -c | sort -k1,1nr | head
+
+samtools view -@ 20 -c -F 20 HeLaS3.whole_centromere.1G_XM_90.bam
+samtools view -@ 20 -c -f 16 HeLaS3.whole_centromere.1G_XM_90.bam
+
+aws s3 cp --no-sign-request \
+  s3://human-pangenomics/T2T/CHM13/assemblies/annotation/chm13v2.0_GENCODEv35_CAT_Liftoff.vep.gff3.gz \
+  chm13v2.0_CAT.gff3.gz \
+  --region us-west-2

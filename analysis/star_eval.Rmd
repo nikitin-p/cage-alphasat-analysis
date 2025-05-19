@@ -1,0 +1,256 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(scales)
+library(patchwork)
+```
+
+```{r}
+dat.path = './star.tsv'
+dat = read.delim(dat.path, header = T,  sep=",", stringsAsFactors = F)
+dat.filt.100k = dat %>%
+  pivot_longer(cols = -k, names_to = "sample", values_to = "percentage")
+dat.filt.6k = dat %>%
+  filter(k <= 6000) %>%
+  pivot_longer(cols = -k, names_to = "sample", values_to = "percentage")
+```
+
+```{r}
+# geom_smooth(method = loess, se = F)
+plot.100k = ggplot(
+  dat.filt.100k,
+  aes(x = k, y = percentage)) +
+  geom_point(aes(color = sample)) +
+  geom_path(aes(color = sample)) +
+  scale_x_continuous(breaks = seq(0, 100000, by=10000),
+                     limits=c(0,100000),
+                     labels = label_comma()) +
+  geom_hline(yintercept=1.88, linetype="dashed", color = "black") +
+  annotate("text", x=50000, y=5, label= "1.88%") + 
+  xlab("k") +
+  ylab("Mapped reads, %") +
+  theme_classic()
+plot.100k
+```
+
+```{r}
+ggsave(
+  "star_eval_100k.png",
+  plot = plot.100k,
+  device = "png",
+  width = 20,
+  height = 10,
+  units = c("cm"),
+  dpi = 300,
+)
+```
+
+```{r}
+plot.6k = ggplot(
+  dat.filt.6k,
+  aes(x = k, y = percentage)) +
+  geom_point(aes(color = sample)) +
+  geom_path(aes(color = sample)) +
+  scale_x_continuous(breaks = seq(0, 6000, by=1000),
+                     limits=c(0,6000),
+                     labels = label_comma()) +
+  geom_hline(yintercept=1.88, linetype="dashed", color = "black") +
+  annotate("text", x=3000, y=5, label= "1.88%") + 
+  xlab("k") +
+  ylab("Mapped reads, %") +
+  theme_classic()
+plot.6k
+```
+
+```{r}
+ggsave(
+  "star_eval_6k.png",
+  plot = plot.6k,
+  device = "png",
+  width = 20,
+  height = 10,
+  units = c("cm"),
+  dpi = 300,
+)
+```
+
+```{r}
+sapply(dat, max)
+```
+
+```{r}
+sample                        max_%    k
+ErythroidProgenitor           44.01   3000
+HematopoieticProgenitor       53.27   2000
+KeratinocyteProgenitor        44.35   3000
+MyeloidProgenitor             51.66   3000
+FibroblastDermisAniso1        59.13   4000
+FibroblastDermisAniso2        58.81   2000
+OsteoblastAniso1              61.74   2000
+OsteoblastAniso2              59.89   2000
+SkeletalMuscleSatelliteAniso1 61.31   2000
+SkeletalMuscleSatelliteAniso2 60.71   4000
+VillousMesenchymeAniso1       56.08   2000
+VillousMesenchymeAniso2       59.17   2000
+```
+
+```{r}
+dat.path = './CAGE_centromere_analysis_mappers_eval.tsv'
+dat = read.delim(dat.path, header = T,  sep="\t", stringsAsFactors = F)
+
+dat1 = dat |> select(all_of(c("k", "reg1", "reg2", "reg3")))
+dat1.longer = dat1 %>%
+  pivot_longer(cols = -k, names_to = "region", values_to = "alignments")
+
+dat2 = dat |> select(all_of(c("k", "reg1.1", "reg2.1", "reg3.1")))
+dat2.longer = dat2 %>%
+  pivot_longer(cols = -k, names_to = "region", values_to = "alignments")
+
+dat3 = dat |> select(all_of(c("k", "reg1.2", "reg2.2", "reg3.2")))
+dat3.longer = dat3 %>%
+  pivot_longer(cols = -k, names_to = "region", values_to = "alignments")
+```
+
+```{r}
+#options(scipen=999)
+plot.1 = ggplot(
+  dat1.longer,
+  aes(x = k, y = alignments)) +
+  ggtitle("Bowtie2") + 
+  # geom_smooth(method = 'loess', formula = 'y ~ x', color = 'grey') + 
+  geom_point(aes(color = region), size=3) +
+  geom_path(aes(color = region), linewidth=2) +
+  scale_x_continuous(breaks = seq(0, 500, by=100),
+                     limits=c(0,500),
+                     labels = label_comma()) +
+  scale_y_continuous(breaks = seq(0, 60000000, by=10000000),
+                     limits=c(0,60000000),
+                     labels = label_comma()) +
+  #ylim(0,60000000) +
+  geom_vline(xintercept=300, linetype="dashed", color = "black") +
+  #annotate("text", x=340, y=8000000, label= "k = 300") + 
+  xlab("k") +
+  ylab("Number of alignments, millions") +
+  theme_classic() +
+  theme(text = element_text(size = 20),
+        legend.position = "none",
+        plot.title = element_text(
+                              face = 'bold', 
+                              size = 20, 
+                              hjust = 0.5))
+plot.1
+```
+```{r}
+plot.2 = ggplot(
+  dat2.longer,
+  aes(x = k, y = alignments)) + 
+  #geom_smooth(method = 'loess', formula = 'y ~ x', color = 'red') + 
+  geom_point(aes(color = region), size=3) +
+  geom_path(aes(color = region), linewidth=2) +
+  scale_x_continuous(breaks = seq(0, 500, by=100),
+                     limits=c(0,500),
+                     labels = label_comma()) +
+  scale_y_continuous(breaks = seq(0, 60000000, by=10000000),
+                     limits=c(0,60000000),
+                     labels = label_comma()) +
+  #ylim(0,60000000) +
+  geom_vline(xintercept=200, linetype="dashed", color = "black") +
+  #annotate("text", x=240, y=4000000, label= "k = 200") + 
+  xlab("k") +
+  ylab("Number of alignments") +
+  ggtitle("HISAT2") + 
+  theme_classic() +
+  theme(text = element_text(size = 20),
+        legend.position = "none",
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        plot.title = element_text(
+                              face = 'bold', 
+                              size = 20, 
+                              hjust = 0.5))
+plot.2
+```
+
+```{r}
+plot.3 = ggplot(
+  dat3.longer,
+  aes(x = k, y = alignments)) +
+  #geom_smooth(method = 'loess', formula = 'y ~ x', color = 'orange') + 
+  geom_point(aes(color = region), size=3) +
+  geom_path(aes(color = region), linewidth=2) +
+  scale_x_continuous(breaks = seq(0, 500, by=100),
+                     limits=c(0,500),
+                     labels = label_comma()) +
+  scale_y_continuous(breaks = seq(0, 60000000, by=10000000),
+                     limits=c(0,60000000),
+                     labels = label_comma()) +
+  #ylim(0,60000000) +
+  geom_vline(xintercept=100, linetype="dashed", color = "black") +
+  #annotate("text", x=140, y=100000, label= "k = 100") + 
+  xlab("k") +
+  ylab("Number of alignments") +
+  ggtitle("STAR") + 
+  theme_classic() +
+  theme(text = element_text(size = 20),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        plot.title = element_text(
+                              face = 'bold', 
+                              size = 20, 
+                              hjust = 0.5))
+plot.3
+```
+
+```{r}
+(plot.1 | plot.2 | plot.3)
+```
+
+```{r}
+plot.4 = ggplot(
+  dat3.longer,
+  aes(x = k, y = alignments)) +
+  #geom_smooth(method = 'loess', formula = 'y ~ x', color = 'orange') + 
+  geom_point(aes(color = region), size=3) +
+  geom_path(aes(color = region), linewidth=2) +
+  scale_x_continuous(breaks = seq(0, 500, by=100),
+                     limits=c(0,500),
+                     labels = label_comma()) +
+  scale_y_continuous(breaks = seq(0, 5000000, by=1000000),
+                     limits=c(0,5000000),
+                     labels = label_comma()) +
+  #ylim(0,60000000) +
+  geom_vline(xintercept=100, linetype="dashed", color = "black") +
+  #annotate("text", x=140, y=100000, label= "k = 100") + 
+  xlab("k") +
+  ylab("Number of alignments, millions") +
+  ggtitle("STAR") + 
+  theme_classic() +
+  theme(text = element_text(size = 20),
+        plot.title = element_text(
+                              face = 'bold', 
+                              size = 20, 
+                              hjust = 0.5))
+plot.4
+```
+
+```{r}
+ggsave(
+  "mappers_star_eval.pdf",
+  plot = last_plot(),
+  device = "pdf",
+  width = 32,
+  height = 18,
+  units = c("cm"),
+  dpi = 300,
+)
+```
+
+chr1 J1,J2
+chr11 W1,W2,W3,W4,W5
+chr19 R1,R2

@@ -1,0 +1,2614 @@
+# hisat.sh
+
+#!/usr/bin/env bash
+
+echo 'STARTED' at $(date)
+
+conda init 
+conda activate hisat
+
+SAMPLES=(
+    "ArticularChondrocyteKneeJoint"
+    "BCell"
+    "BronchialSmoothMuscleCells"
+    "CD14PositiveMonocyte"
+    "ErythroidProgenitor"
+    "FANTOM6DermalBloodVascularEndothelialCells"
+    "FANTOM6DermalFibroblasts"
+    "FANTOM6DermalLymphaticVascularEndothelialCells"
+    "FibroblastDermisAniso1"
+    "FibroblastDermisAniso2"
+    "GM12878"
+    "H9hESC"
+    "HeLaS3"
+    "HematopoieticProgenitor"
+    "HepG2"
+    "K562"
+    "KeratinocyteFemale"
+    "KeratinocyteProgenitor"
+    "MCF7"
+    "MyeloidProgenitor"
+    "OsteoblastAniso1"
+    "OsteoblastAniso2"
+    "SkeletalMuscleSatelliteAniso1"
+    "SkeletalMuscleSatelliteAniso2"
+    "UmbilicalVeinCytosolicFraction"
+    "VillousMesenchymeAniso1"
+    "VillousMesenchymeAniso2"
+)
+
+for SAMPLE in "${SAMPLES[@]}"
+do
+    echo "Processing ${SAMPLE}"
+
+    hisat2 \
+        -x /home/pnikitin/cage/hisat/t2t_chm13_ref \
+        -U /home/pnikitin/cage/data/${SAMPLE}_L001_R1_001.fastq.gz \
+        -p 20 | \
+        samtools view -b - | \
+        samtools sort -@ 20 -O bam -o ${SAMPLE}_hisat.bam
+
+    echo 'DONE HISAT for' ${SAMPLE} $(date)
+done
+
+
+# get_remap.sh
+
+#!/usr/bin/env bash
+
+echo 'STARTED' at $(date)
+
+conda init 
+conda activate tools
+
+SAMPLES=(
+    "ArticularChondrocyteKneeJoint"
+    "BCell"
+    "BronchialSmoothMuscleCells"
+    "CD14PositiveMonocyte"
+    "ErythroidProgenitor"
+    "FANTOM6DermalBloodVascularEndothelialCells"
+    "FANTOM6DermalFibroblasts"
+    "FANTOM6DermalLymphaticVascularEndothelialCells"
+    "FibroblastDermisAniso1"
+    "FibroblastDermisAniso2"
+    "GM12878"
+    "H9hESC"
+    "HeLaS3"
+    "HematopoieticProgenitor"
+    "HepG2"
+    "K562"
+    "KeratinocyteFemale"
+    "KeratinocyteProgenitor"
+    "MCF7"
+    "MyeloidProgenitor"
+    "OsteoblastAniso1"
+    "OsteoblastAniso2"
+    "SkeletalMuscleSatelliteAniso1"
+    "SkeletalMuscleSatelliteAniso2"
+    "UmbilicalVeinCytosolicFraction"
+    "VillousMesenchymeAniso1"
+    "VillousMesenchymeAniso2"
+)
+
+for SAMPLE in "${SAMPLES[@]}"
+do
+    echo "Processing ${SAMPLE}"
+
+    samtools view -@ 20 -b -f 4 ${SAMPLE}_hisat.bam > ${SAMPLE}.BAM1_u.bam
+    samtools view -@ 20 -b -F 4 ${SAMPLE}_hisat.bam > ${SAMPLE}.BAM1_m.bam
+
+    bedtools intersect -abam ${SAMPLE}.BAM1_m.bam -b censat_hor_with_strand_R.bed > ${SAMPLE}.BAM1_m_cen.bam
+    bedtools intersect -abam ${SAMPLE}.BAM1_m.bam -b censat_hor_with_strand_R.bed -v > ${SAMPLE}.BAM1_m_noncen.bam
+
+    samtools fastq -@ 20 ${SAMPLE}.BAM1_u.bam > ${SAMPLE}.BAM1_u.fastq
+    samtools fastq -@ 20 ${SAMPLE}.BAM1_m_cen.bam > ${SAMPLE}.BAM1_m_filt_cen.fastq
+    cat ${SAMPLE}.BAM1_m_filt_cen.fastq ${SAMPLE}.BAM1_u.fastq > ${SAMPLE}.BAM1_remap_R1.fastq
+    rm ${SAMPLE}.BAM1_u.bam
+    rm ${SAMPLE}.BAM1_m.bam
+    rm ${SAMPLE}.BAM1_m_cen.bam
+    rm ${SAMPLE}.BAM1_m_noncen.bam
+    rm ${SAMPLE}.BAM1_u.fastq
+    rm ${SAMPLE}.BAM1_m_filt_cen.fastq
+    gzip ${SAMPLE}.BAM1_remap_R1.fastq
+
+    echo 'DONE' ${SAMPLE} $(date)
+done
+
+# hisat_remap.sh
+
+#!/usr/bin/env bash
+
+echo "STARTED at $(date)"
+
+conda init
+conda activate hisat
+
+REGIONS=("reg1" "reg2" "reg3")
+
+SAMPLES=(
+    "ArticularChondrocyteKneeJoint"
+    "BCell"
+    "BronchialSmoothMuscleCells"
+    "CD14PositiveMonocyte"
+    "ErythroidProgenitor"
+    "FANTOM6DermalBloodVascularEndothelialCells"
+    "FANTOM6DermalFibroblasts"
+    "FANTOM6DermalLymphaticVascularEndothelialCells"
+    "FibroblastDermisAniso1"
+    "FibroblastDermisAniso2"
+    "GM12878"
+    "H9hESC"
+    "HeLaS3"
+    "HematopoieticProgenitor"
+    "HepG2"
+    "K562"
+    "KeratinocyteFemale"
+    "KeratinocyteProgenitor"
+    "MCF7"
+    "MyeloidProgenitor"
+    "OsteoblastAniso1"
+    "OsteoblastAniso2"
+    "SkeletalMuscleSatelliteAniso1"
+    "SkeletalMuscleSatelliteAniso2"
+    "UmbilicalVeinCytosolicFraction"
+    "VillousMesenchymeAniso1"
+    "VillousMesenchymeAniso2"
+)
+
+for SAMPLE in "${SAMPLES[@]}"
+do
+    echo "Processing ${SAMPLE}"
+
+    BAM_FILES=()
+
+    for REGION in "${REGIONS[@]}"
+    do
+        echo "Processing ${SAMPLE} for ${REGION}"
+
+        hisat2 \
+            -x 100k_${REGION}_ref \
+            -U ${SAMPLE}.BAM1_remap_R1.fastq.gz \
+            -p 20 \
+            -k 800 \
+            --max-seeds 1600 | \
+            samtools view -b - | \
+            samtools sort -@ 20 -O bam -o ${SAMPLE}_hisat_${REGION}.bam
+
+        samtools view -@ 20 -H ${SAMPLE}_hisat_${REGION}.bam > ${SAMPLE}_header.BAM1_m_${REGION}.sam
+
+        samtools view -@ 20 -F 16 ${SAMPLE}_hisat_${REGION}.bam | awk -F '\t' 'BEGIN {OFS="\t"} {BASE = substr($10, 1, 1); if ($6 ~ /^1S[0-9]/ && BASE == "G") {print $0}}' > ${SAMPLE}_SoftclipG_F.BAM1_m_${REGION}.sam
+
+        samtools view -@ 20 -f 16 ${SAMPLE}_hisat_${REGION}.bam | awk -F '\t' 'BEGIN {OFS="\t"} { ALT = substr($10, length($10)-1, 1); if ($6 ~ /[0-9]M1S$/ && ALT == "C") {print $0}}' > ${SAMPLE}_SoftclipG_R.BAM1_m_${REGION}.sam
+
+        cat ${SAMPLE}_header.BAM1_m_${REGION}.sam ${SAMPLE}_SoftclipG_F.BAM1_m_${REGION}.sam ${SAMPLE}_SoftclipG_R.BAM1_m_${REGION}.sam | \
+            samtools sort -@ 20 -O bam -o ${SAMPLE}.BAM1_m_filt_${REGION}.bam
+
+        samtools view -h ${SAMPLE}.BAM1_m_filt_${REGION}.bam | awk 'BEGIN{OFS="\t"} /^@/ {print; next} {match($6, /([0-9]+)M/g, a); totalM=0; for (i in a) totalM+=a[i]; if (totalM/length($10) >= 0.90) print}' | samtools view -b -o ${SAMPLE}.BAM1_m_filt_90pt_${REGION}.bam
+
+        rm ${SAMPLE}_header.BAM1_m_${REGION}.sam
+        rm ${SAMPLE}_SoftclipG_F.BAM1_m_${REGION}.sam
+        rm ${SAMPLE}_SoftclipG_R.BAM1_m_${REGION}.sam
+
+        BAM_FILES+=("${SAMPLE}.BAM1_m_filt_90pt_${REGION}.bam")
+
+        echo "DONE HISAT for ${SAMPLE} in ${REGION} at $(date)"
+    done
+
+    MERGED_BAM="${SAMPLE}.BAM1_m_filt_90pt_merged.bam"
+    samtools merge -@ 20 "$MERGED_BAM" "${BAM_FILES[@]}"
+    samtools index "$MERGED_BAM"
+
+    echo "Merged BAM created for ${SAMPLE}: ${MERGED_BAM}"
+
+    rm "${BAM_FILES[@]}"
+    echo "DONE HISAT for ${SAMPLE} in ${REGION} at $(date)"
+
+done
+
+echo "DONE at $(date)"
+
+# flagstat.sh
+
+#!/usr/bin/env bash
+
+echo 'STARTED' at $(date)
+
+conda init 
+conda activate tools
+
+SAMPLES=(
+    "ArticularChondrocyteKneeJoint"
+    "BCell"
+    "BronchialSmoothMuscleCells"
+    "CD14PositiveMonocyte"
+    "ErythroidProgenitor"
+    "FANTOM6DermalBloodVascularEndothelialCells"
+    "FANTOM6DermalFibroblasts"
+    "FANTOM6DermalLymphaticVascularEndothelialCells"
+    "FibroblastDermisAniso1"
+    "FibroblastDermisAniso2"
+    "GM12878"
+    "H9hESC"
+    "HeLaS3"
+    "HematopoieticProgenitor"
+    "HepG2"
+    "K562"
+    "KeratinocyteFemale"
+    "KeratinocyteProgenitor"
+    "MCF7"
+    "MyeloidProgenitor"
+    "OsteoblastAniso1"
+    "OsteoblastAniso2"
+    "SkeletalMuscleSatelliteAniso1"
+    "SkeletalMuscleSatelliteAniso2"
+    "UmbilicalVeinCytosolicFraction"
+    "VillousMesenchymeAniso1"
+    "VillousMesenchymeAniso2"
+)
+
+for SAMPLE in "${SAMPLES[@]}"
+do
+    echo ${SAMPLE}
+    samtools merge -@ 20 ${SAMPLE}.BAM1_m_filt_90pt_merged.bam ${SAMPLE}.BAM1_m_filt_reg1.bam ${SAMPLE}.BAM1_m_filt_reg2.bam ${SAMPLE}.BAM1_m_filt_reg3.bam
+    samtools index ${SAMPLE}.BAM1_m_filt_90pt_merged.bam
+    samtools flagstat -@ 10 ${SAMPLE}.BAM1_m_filt_90pt_merged.bam | grep 'mapped (' | head -1
+done
+
+# get5GsoftclipBAM.sh
+# Get 5-G-soft-clipped BAM
+
+#!/usr/bin/env bash
+
+echo 'STARTED' at $(date)
+
+conda init 
+conda activate tools
+
+SAMPLES=(
+    "ArticularChondrocyteKneeJoint"
+    "BCell"
+    "BronchialSmoothMuscleCells"
+    "CD14PositiveMonocyte"
+    "ErythroidProgenitor"
+    "FANTOM6DermalBloodVascularEndothelialCells"
+    "FANTOM6DermalFibroblasts"
+    "FANTOM6DermalLymphaticVascularEndothelialCells"
+    "FibroblastDermisAniso1"
+    "FibroblastDermisAniso2"
+    "GM12878"
+    "H9hESC"
+    "HeLaS3"
+    "HematopoieticProgenitor"
+    "HepG2"
+    "K562"
+    "KeratinocyteFemale"
+    "KeratinocyteProgenitor"
+    "MCF7"
+    "MyeloidProgenitor"
+    "OsteoblastAniso1"
+    "OsteoblastAniso2"
+    "SkeletalMuscleSatelliteAniso1"
+    "SkeletalMuscleSatelliteAniso2"
+    "UmbilicalVeinCytosolicFraction"
+    "VillousMesenchymeAniso1"
+    "VillousMesenchymeAniso2"
+)
+
+for SAMPLE in "${SAMPLES[@]}"
+do
+    echo ${SAMPLE}
+    samtools view -@ 20 -H ${SAMPLE}_hisat.bam > ${SAMPLE}_header.BAM.sam
+
+    samtools view -@ 20 -F 16 ${SAMPLE}_hisat.bam | awk -F '\t' 'BEGIN {OFS="\t"} {BASE = substr($10, 1, 1); if ($6 ~ /^1S[0-9]/ && BASE == "G") {print $0}}' > ${SAMPLE}_SoftclipG_F.BAM.sam
+
+    samtools view -@ 20 -f 16 ${SAMPLE}_hisat.bam | awk -F '\t' 'BEGIN {OFS="\t"} { ALT = substr($10, length($10)-1, 1); if ($6 ~ /[0-9]M1S$/ && ALT == "C") {print $0}}' > ${SAMPLE}_SoftclipG_R.BAM.sam
+
+    cat ${SAMPLE}_header.BAM.sam ${SAMPLE}_SoftclipG_F.BAM.sam ${SAMPLE}_SoftclipG_R.BAM.sam | \
+        samtools sort -@ 20 -O bam -o ${SAMPLE}.BAM_SoftclipG_initial_map.bam
+
+    rm ${SAMPLE}_header.BAM.sam
+    rm ${SAMPLE}_SoftclipG_F.BAM.sam
+    rm ${SAMPLE}_SoftclipG_R.BAM.sam
+
+    echo "DONE for ${SAMPLE} at $(date)"
+done
+
+samtools view -@ 20 -H ArticularChondrocyteKneeJoint_hisat_rnaF.bam > BCell_SoftclipG_R.BAM.sam
+samtools view -@ 20 -f 16 ArticularChondrocyteKneeJoint_hisat_rnaF.bam | awk -F '\t' '{if ($6 ~ /^1S[0-9]+M$/) print}' >> ArticularChondrocyteKneeJoint_hisat_rnaF_SoftclipG_R.BAM.sam
+samtools view -b ArticularChondrocyteKneeJoint_hisat_rnaF_SoftclipG_R.BAM.sam -o ArticularChondrocyteKneeJoint_hisat_rnaF_SoftclipG_R.BAM.bam
+samtools index ArticularChondrocyteKneeJoint_hisat_rnaF_SoftclipG_R.BAM.bam
+
+grep '111026_SN554_0099_BB0740ABXX:6:1102:17953:85534#0/1' BCell_SoftclipG_R.BAM.sam
+zcat ../data/BCell_L001_R1_001.fastq.gz | grep -A 4 '111026_SN554_0099_BB0740ABXX:6:1102:17953:85534#0/1' 
+hisat2 \
+    --rna-strandness R \
+    -x /home/pnikitin/cage/hisat/t2t_chm13_ref \
+    -U /home/pnikitin/cage/data/ArticularChondrocyteKneeJoint_L001_R1_001.fastq.gz \
+    -p 20 | \
+    samtools view -b - | \
+    samtools sort -@ 20 -O bam -o ArticularChondrocyteKneeJoint_hisat_rnaR.bam
+
+# get5coverage.sh
+# Get 5'-coverage bigwig from a bam file
+
+#!/usr/bin/env bash
+
+echo 'STARTED' at $(date)
+
+conda init 
+conda activate bamcov
+
+SAMPLES=(
+    "ArticularChondrocyteKneeJoint"
+    "BCell"
+    "BronchialSmoothMuscleCells"
+    "CD14PositiveMonocyte"
+    "ErythroidProgenitor"
+    "FANTOM6DermalBloodVascularEndothelialCells"
+    "FANTOM6DermalFibroblasts"
+    "FANTOM6DermalLymphaticVascularEndothelialCells"
+    "FibroblastDermisAniso1"
+    "FibroblastDermisAniso2"
+    "GM12878"
+    "H9hESC"
+    "HeLaS3"
+    "HematopoieticProgenitor"
+    "HepG2"
+    "K562"
+    "KeratinocyteFemale"
+    "KeratinocyteProgenitor"
+    "MCF7"
+    "MyeloidProgenitor"
+    "OsteoblastAniso1"
+    "OsteoblastAniso2"
+    "SkeletalMuscleSatelliteAniso1"
+    "SkeletalMuscleSatelliteAniso2"
+    "UmbilicalVeinCytosolicFraction"
+    "VillousMesenchymeAniso1"
+    "VillousMesenchymeAniso2"
+)
+
+for SAMPLE in "${SAMPLES[@]}"
+do
+    echo ${SAMPLE}
+    samtools index ${SAMPLE}.BAM_SoftclipG_initial_map.bam
+    samtools view -@ 10 -b -F 16 ${SAMPLE}.BAM_SoftclipG_initial_map.bam > ${SAMPLE}.BAM_SoftclipG_initial_map_forward.bam
+    samtools view -@ 10 -b -f 16 ${SAMPLE}.BAM_SoftclipG_initial_map.bam > ${SAMPLE}.BAM_SoftclipG_initial_map_reverse.bam
+    samtools index ${SAMPLE}.BAM_SoftclipG_initial_map_forward.bam
+    samtools index ${SAMPLE}.BAM_SoftclipG_initial_map_reverse.bam
+    bamCoverage -p 10 -b ${SAMPLE}.BAM_SoftclipG_initial_map_forward.bam --outFileName ${SAMPLE}.BAM_SoftclipG_initial_map_five_prime_F.bw --binSize 1 --Offset 1
+    bamCoverage -p 10 -b ${SAMPLE}.BAM_SoftclipG_initial_map_reverse.bam --outFileName ${SAMPLE}.BAM_SoftclipG_initial_map_five_prime_R.bw --binSize 1 --Offset 1
+    # bedtools genomecov с параметрами -bg -strand +[-] -5 -scale
+    echo "DONE for ${SAMPLE} at $(date)"
+done
+
+# hisat_map_to_centromere.sh
+# Map to the whole centromeres
+
+#!/usr/bin/env bash
+
+echo "STARTED at $(date)"
+
+k_value=1
+maxseeds_value=5
+
+conda init
+conda activate hisat
+
+SAMPLES=(
+    "ArticularChondrocyteKneeJoint"
+)
+
+for SAMPLE in "${SAMPLES[@]}"
+do
+    echo "Processing ${SAMPLE}"
+
+    hisat2 \
+        -x t2t_whole_centromeres_ref \
+        -U ${SAMPLE}.BAM1_remap_R1.fastq.gz \
+        -p 20 \
+        -k ${k_value} \
+        --max-seeds ${maxseeds_value} | \
+        samtools view -b - | \
+        samtools sort -@ 20 -O bam -o ${SAMPLE}_hisat_whole_centromere_${k_value}_${maxseeds_value}.bam
+
+    # samtools index "$MERGED_BAM"
+
+    echo "DONE HISAT for ${SAMPLE} at $(date)"
+
+done
+
+echo "DONE at $(date)"
+
+# hisat_remap.sh
+#!/usr/bin/env bash
+
+echo "STARTED at $(date)"
+
+conda init
+conda activate hisat
+
+SAMPLES=(
+    "ArticularChondrocyteKneeJoint"
+    "BCell"
+    "BronchialSmoothMuscleCells"
+    "CD14PositiveMonocyte"
+    "ErythroidProgenitor"
+    "FANTOM6DermalBloodVascularEndothelialCells"
+    "FANTOM6DermalFibroblasts"
+    "FANTOM6DermalLymphaticVascularEndothelialCells"
+    "FibroblastDermisAniso1"
+    "FibroblastDermisAniso2"
+    "GM12878"
+    "H9hESC"
+    "HeLaS3"
+    "HematopoieticProgenitor"
+    "HepG2"
+    "K562"
+    "KeratinocyteFemale"
+    "KeratinocyteProgenitor"
+    "MCF7"
+    "MyeloidProgenitor"
+    "OsteoblastAniso1"
+    "OsteoblastAniso2"
+    "SkeletalMuscleSatelliteAniso1"
+    "SkeletalMuscleSatelliteAniso2"
+    "UmbilicalVeinCytosolicFraction"
+    "VillousMesenchymeAniso1"
+    "VillousMesenchymeAniso2"
+)
+
+for SAMPLE in "${SAMPLES[@]}"
+do
+    echo "Processing ${SAMPLE}"
+
+    hisat2 \
+        -x t2t_whole_centromeres_ref \
+        -U ${SAMPLE}.BAM1_remap_R1.fastq.gz \
+        -p 20 \
+        -k 100000 \
+        --max-seeds 500000 | \
+        samtools view -b - | \
+        samtools sort -@ 20 -O bam -o ${SAMPLE}_hisat_whole_centromere_100k_500k.bam
+
+    samtools view -@ 20 -H ${SAMPLE}_hisat_whole_centromere_100k_500k.bam > ${SAMPLE}_header.BAM1_m.sam
+
+    samtools view -@ 20 -F 16 ${SAMPLE}_hisat_whole_centromere_100k_500k.bam | awk -F '\t' 'BEGIN {OFS="\t"} {BASE = substr($10, 1, 1); if ($6 ~ /^1S[0-9]/ && BASE == "G") {print $0}}' > ${SAMPLE}_SoftclipG_F.BAM1_m.sam
+
+    samtools view -@ 20 -f 16 ${SAMPLE}_hisat_whole_centromere_100k_500k.bam | awk -F '\t' 'BEGIN {OFS="\t"} { ALT = substr($10, length($10)-1, 1); if ($6 ~ /[0-9]M1S$/ && ALT == "C") {print $0}}' > ${SAMPLE}_SoftclipG_R.BAM1_m.sam
+
+    cat ${SAMPLE}_header.BAM1_m.sam ${SAMPLE}_SoftclipG_F.BAM1_m.sam ${SAMPLE}_SoftclipG_R.BAM1_m.sam | \
+        samtools sort -@ 20 -O bam -o ${SAMPLE}.BAM1_m_filt.bam
+
+    samtools view -h ${SAMPLE}.BAM1_m_filt.bam | awk 'BEGIN{OFS="\t"} /^@/ {print; next} {match($6, /([0-9]+)M/g, a); totalM=0; for (i in a) totalM+=a[i]; if (totalM/length($10) >= 0.90) print}' | samtools view -b -o ${SAMPLE}.whole_centromere.1G_soft_clip_90pt.bam
+
+    rm ${SAMPLE}_header.BAM1_m.sam
+    rm ${SAMPLE}_SoftclipG_F.BAM1_m.sam
+    rm ${SAMPLE}_SoftclipG_R.BAM1_m.sam
+
+    samtools index ${SAMPLE}.whole_centromere.1G_soft_clip_90pt.bam
+
+    echo "DONE HISAT for ${SAMPLE} at $(date)"
+
+done
+
+echo "DONE at $(date)"
+
+# xm_filter.sh
+#!/usr/bin/env bash
+
+echo "STARTED at $(date)"
+
+conda init
+conda activate tools
+
+SAMPLES=(
+    "ArticularChondrocyteKneeJoint"
+    "BCell"
+    "BronchialSmoothMuscleCells"
+    "CD14PositiveMonocyte"
+    "ErythroidProgenitor"
+    "FANTOM6DermalBloodVascularEndothelialCells"
+    "FANTOM6DermalFibroblasts"
+    "FANTOM6DermalLymphaticVascularEndothelialCells"
+    "FibroblastDermisAniso1"
+    "FibroblastDermisAniso2"
+    "GM12878"
+    "H9hESC"
+    "HeLaS3"
+    "HematopoieticProgenitor"
+    "HepG2"
+    "K562"
+    "KeratinocyteFemale"
+    "KeratinocyteProgenitor"
+    "MCF7"
+    "MyeloidProgenitor"
+    "OsteoblastAniso1"
+    "OsteoblastAniso2"
+    "SkeletalMuscleSatelliteAniso1"
+    "SkeletalMuscleSatelliteAniso2"
+    "UmbilicalVeinCytosolicFraction"
+    "VillousMesenchymeAniso1"
+    "VillousMesenchymeAniso2"
+)
+
+for SAMPLE in "${SAMPLES[@]}"
+do
+    echo "Processing ${SAMPLE}"
+
+    samtools view -h ${SAMPLE}.BAM1_m_filt.bam | awk 'BEGIN{OFS="\t"} /^@/ {print; next} {for (i=12; i<=NF; i++) if ($i ~ /^XM:i:/) {split($i, xm, ":"); if (xm[3]/length($10) < 0.10) print; break}}' | samtools view -b -o ${SAMPLE}.whole_centromere.1G_XM_90.bam
+
+    samtools index ${SAMPLE}.whole_centromere.1G_XM_90.bam
+
+    echo "DONE HISAT for ${SAMPLE} at $(date)"
+
+done
+
+echo "DONE at $(date)"
+
+# mapping_histogram.sh
+#!/usr/bin/env bash
+
+echo "STARTED at $(date)"
+
+conda init
+conda activate tools
+
+SAMPLES=(
+    "ArticularChondrocyteKneeJoint"
+    "BCell"
+    "BronchialSmoothMuscleCells"
+    "CD14PositiveMonocyte"
+    "ErythroidProgenitor"
+    "FANTOM6DermalBloodVascularEndothelialCells"
+    "FANTOM6DermalFibroblasts"
+    "FANTOM6DermalLymphaticVascularEndothelialCells"
+    "FibroblastDermisAniso1"
+    "FibroblastDermisAniso2"
+    "GM12878"
+    "H9hESC"
+    "HeLaS3"
+    "HematopoieticProgenitor"
+    "HepG2"
+    "K562"
+    "KeratinocyteFemale"
+    "KeratinocyteProgenitor"
+    "MCF7"
+    "MyeloidProgenitor"
+    "OsteoblastAniso1"
+    "OsteoblastAniso2"
+    "SkeletalMuscleSatelliteAniso1"
+    "SkeletalMuscleSatelliteAniso2"
+    "UmbilicalVeinCytosolicFraction"
+    "VillousMesenchymeAniso1"
+    "VillousMesenchymeAniso2"
+)
+
+for SAMPLE in "${SAMPLES[@]}"
+do
+    echo "Processing ${SAMPLE}"
+
+    samtools view ${SAMPLE}.whole_centromere.1G_XM_90.bam | cut -f1 | sort | uniq -c | sort -k1nr | awk '{print $1 "\t" $2}'> ${SAMPLE}_mapping_histogram.tsv
+
+    echo "DONE HISAT for ${SAMPLE} at $(date)"
+
+done
+
+echo "DONE at $(date)"
+
+# wrapper_dinucleotides.sh
+#!/usr/bin/env bash
+
+echo "STARTED at $(date)"
+
+SAMPLES=(
+    "ArticularChondrocyteKneeJoint"
+    "BCell"
+    "BronchialSmoothMuscleCells"
+    "CD14PositiveMonocyte"
+    "ErythroidProgenitor"
+    "FANTOM6DermalBloodVascularEndothelialCells"
+    "FANTOM6DermalFibroblasts"
+    "FANTOM6DermalLymphaticVascularEndothelialCells"
+    "FibroblastDermisAniso1"
+    "FibroblastDermisAniso2"
+    "GM12878"
+    "H9hESC"
+    "HeLaS3"
+    "HematopoieticProgenitor"
+    "HepG2"
+    "K562"
+    "KeratinocyteFemale"
+    "KeratinocyteProgenitor"
+    "MCF7"
+    "MyeloidProgenitor"
+    "OsteoblastAniso1"
+    "OsteoblastAniso2"
+    "SkeletalMuscleSatelliteAniso1"
+    "SkeletalMuscleSatelliteAniso2"
+    "UmbilicalVeinCytosolicFraction"
+    "VillousMesenchymeAniso1"
+    "VillousMesenchymeAniso2"
+)
+
+REF="t2t-chm13-v2.0.censat_hor_with_strand_R.fa"
+
+for SAMPLE in "${SAMPLES[@]}"
+do
+    echo "Processing ${SAMPLE}"
+
+    BAM="${SAMPLE}.whole_centromere.1G_XM_90.no_transposons.bam"
+    DINUC_OUT="${SAMPLE}_dinucleotide_counts.txt"
+    TABLE_OUT="${SAMPLE}_dinucleotide_table.tsv"
+
+    bash extract_dinucleotides.sh "$BAM" "$REF" "$DINUC_OUT"
+
+    python3 process_dinucleotides.py "$DINUC_OUT" "$TABLE_OUT"
+
+    echo "DONE processing ${SAMPLE} at $(date)"
+done
+
+echo "ALL SAMPLES PROCESSED at $(date)"
+
+# extract_dinucleotides.sh
+#!/usr/bin/env bash
+
+BAM="$1"
+REF="$2"
+OUT="$3"
+
+samtools view $BAM | awk '
+function revcomp(base) {
+    if (base == "A") return "T";
+    if (base == "T") return "A";
+    if (base == "C") return "G";
+    if (base == "G") return "C";
+    return base;
+}
+
+{
+    flag = $2;
+    cigar = $6;
+    seq = $10;
+
+    soft_clip = 0;
+    if (match(cigar, /^[0-9]+S/)) {
+        soft_clip = substr(cigar, 1, RSTART-1);
+    }
+
+    first_mapped_base = substr(seq, soft_clip + 1, 1);
+
+    reverse_strand = (and(flag, 16) != 0);
+
+    print $1, $3, $4, first_mapped_base, reverse_strand;
+}' > first_nucleotides.txt
+
+while read READ CHR POS BASE STRAND; do
+    PREV_BASE=$(samtools faidx $REF ${CHR}:$((POS-1))-$((POS-1)) | tail -n1)
+
+    if [ "$STRAND" -eq 1 ]; then
+        BASE=$(echo "$BASE" | tr "ACGTacgt" "TGCAtgca")
+        PREV_BASE=$(echo "$PREV_BASE" | tr "ACGTacgt" "TGCAtgca")
+    fi
+
+    echo -e "${PREV_BASE}${BASE}\t${READ}"
+done < first_nucleotides.txt > $OUT
+
+# process_dinucleotides.py
+import pandas as pd
+import sys
+from collections import defaultdict
+
+input_file = sys.argv[1]  # dinucleotide_counts.txt
+output_file = sys.argv[2]  # dinucleotide_table.tsv
+
+dinuc_counts = defaultdict(lambda: defaultdict(int))
+
+with open(input_file) as f:
+    for line in f:
+        parts = line.strip().split("\t")
+        if len(parts) != 2:
+            continue
+
+        dinuc, read = parts
+        dinuc = dinuc.upper().strip()
+        read = read.strip()
+
+        dinuc_counts[dinuc][read] += 1
+
+all_dinucs = [a + b for a in "ACGT" for b in "ACGT"]
+all_reads = sorted(set(r for counts in dinuc_counts.values() for r in counts))
+
+df = pd.DataFrame(0, index=all_dinucs, columns=all_reads)
+
+for dinuc, reads in dinuc_counts.items():
+    for read, count in reads.items():
+        df.at[dinuc, read] = count
+
+df.to_csv(output_file, sep="\t")
+
+print(f"Dinucleotide frequency table saved to {output_file}")
+
+# Adjust transposon coordinates
+# adjust_transposons.py
+#!/usr/bin/env python3
+import pandas as pd
+
+#bed_file_path = "centromeric_transposons_short.tsv"
+bed_file_path = "hor_strands_short.tsv"
+#bed_file_path = "alpha_monomers_short.tsv"
+headers_file_path = "t2t-chm13-v2.0.censat_hor_with_strand_R.headers.txt"
+#output_bed_path = "adjusted_centromeric_transposons_full_ranges.bed"
+output_bed_path = "adjusted_hor_strands_full_ranges.bed"
+#output_bed_path = "adjusted_alpha_monomers_full_ranges.bed"
+
+bed_df = pd.read_csv(bed_file_path, sep="\t", header=None, names=["chrom", "start", "end", "name", "score", "strand"])
+
+with open(headers_file_path, "r") as f:
+    headers = f.readlines()
+
+chrom_name_mapping = {}
+for line in headers:
+    if line.startswith(">"):
+        full_range = line.strip()[1:]
+        chrom, start_end = full_range.split(":")
+        start, end = map(int, start_end.split("-"))
+        if chrom not in chrom_name_mapping:
+            chrom_name_mapping[chrom] = []
+        chrom_name_mapping[chrom].append((start, end, full_range))
+
+def adjust_coordinates_with_full_range(chrom, start, end):
+    if chrom in chrom_name_mapping:
+        for new_start, new_end, full_range in chrom_name_mapping[chrom]:
+            if new_start <= start <= new_end and new_start <= end <= new_end:
+                adj_start = start - new_start
+                adj_end = end - new_start
+                return full_range, adj_start, adj_end
+    return chrom, start, end
+
+bed_df[["chrom", "start", "end"]] = bed_df.apply(
+    lambda row: adjust_coordinates_with_full_range(row["chrom"], row["start"], row["end"]), axis=1, result_type="expand"
+)
+
+with open(output_bed_path, "w") as f:
+    for _, row in bed_df.iterrows():
+        f.write("\t".join(map(str, row)) + "\n")  # Ensures no trailing tabs
+
+print(f"Adjusted BED file saved as {output_bed_path}")
+
+# calculate_transposons_and_monomers.sh
+#!/usr/bin/env bash
+
+echo "STARTED at $(date)"
+
+SAMPLES=(
+    "ArticularChondrocyteKneeJoint"
+    "BCell"
+    "BronchialSmoothMuscleCells"
+    "CD14PositiveMonocyte"
+    "ErythroidProgenitor"
+    "FANTOM6DermalBloodVascularEndothelialCells"
+    "FANTOM6DermalFibroblasts"
+    "FANTOM6DermalLymphaticVascularEndothelialCells"
+    "FibroblastDermisAniso1"
+    "FibroblastDermisAniso2"
+    "GM12878"
+    "H9hESC"
+    "HeLaS3"
+    "HematopoieticProgenitor"
+    "HepG2"
+    "K562"
+    "KeratinocyteFemale"
+    "KeratinocyteProgenitor"
+    "MCF7"
+    "MyeloidProgenitor"
+    "OsteoblastAniso1"
+    "OsteoblastAniso2"
+    "SkeletalMuscleSatelliteAniso1"
+    "SkeletalMuscleSatelliteAniso2"
+    "UmbilicalVeinCytosolicFraction"
+    "VillousMesenchymeAniso1"
+    "VillousMesenchymeAniso2"
+)
+
+for SAMPLE in "${SAMPLES[@]}"
+do
+    echo "------${SAMPLE}------"
+    #samtools flagstat ${SAMPLE}.whole_centromere.1G_XM_90.bam | grep '0 mapped ('
+    #samtools flagstat ${SAMPLE}.whole_centromere.1G_XM_90.bam | grep 'primary mapped ('
+    samtools flagstat ${SAMPLE}.whole_centromere.1G_XM_90.no_transposons.bam | grep '0 mapped ('
+    samtools flagstat ${SAMPLE}.whole_centromere.1G_XM_90.no_transposons.bam | grep 'primary mapped ('
+    #bedtools coverage -counts -a adjusted_centromeric_transposons_full_ranges.bed -b ${SAMPLE}.whole_centromere.1G_XM_90.bam | awk '{if ($7 >= 1) print}' | cut -f4,7 | awk '{sum[$1] += $2} END {for (i in sum) print i, sum[i]}'
+    #bedtools coverage -counts -a adjusted_alpha_monomers_full_ranges.bed -b ${SAMPLE}.whole_centromere.1G_XM_90.no_transposons.bam | awk '{if ($7 >= 0) print}' | cut -f4,7 | awk '{sum[$1] += $2} END {for (i in sum) print i, sum[i]}' | sort -k1 | awk '{print $2}'
+done
+
+echo "ALL SAMPLES PROCESSED at $(date)"
+
+# Get HOR strand specificity
+# hor_strand_specificity.sh
+#!/usr/bin/env bash
+
+echo 'STARTED' at $(date)
+
+SAMPLES=(
+    "ArticularChondrocyteKneeJoint"
+    "BCell"
+    "BronchialSmoothMuscleCells"
+    "CD14PositiveMonocyte"
+    "ErythroidProgenitor"
+    "FANTOM6DermalBloodVascularEndothelialCells"
+    "FANTOM6DermalFibroblasts"
+    "FANTOM6DermalLymphaticVascularEndothelialCells"
+    "FibroblastDermisAniso1"
+    "FibroblastDermisAniso2"
+    "GM12878"
+    "H9hESC"
+    "HeLaS3"
+    "HematopoieticProgenitor"
+    "HepG2"
+    "K562"
+    "KeratinocyteFemale"
+    "KeratinocyteProgenitor"
+    "MCF7"
+    "MyeloidProgenitor"
+    "OsteoblastAniso1"
+    "OsteoblastAniso2"
+    "SkeletalMuscleSatelliteAniso1"
+    "SkeletalMuscleSatelliteAniso2"
+    "UmbilicalVeinCytosolicFraction"
+    "VillousMesenchymeAniso1"
+    "VillousMesenchymeAniso2"
+)
+
+for SAMPLE in "${SAMPLES[@]}"
+do
+    echo "----${SAMPLE}----"
+    #samtools index ${SAMPLE}.whole_centromere.1G_XM_90.bam
+    samtools view -@ 10 -b -F 20 ${SAMPLE}.whole_centromere.1G_XM_90.no_transposons.bam > ${SAMPLE}.whole_centromere.1G_XM_90.no_transposons.forward.bam
+    samtools view -@ 10 -b -f 16 ${SAMPLE}.whole_centromere.1G_XM_90.no_transposons.bam > ${SAMPLE}.whole_centromere.1G_XM_90.no_transposons.reverse.bam
+    samtools index ${SAMPLE}.whole_centromere.1G_XM_90.no_transposons.forward.bam
+    samtools index ${SAMPLE}.whole_centromere.1G_XM_90.no_transposons.reverse.bam
+
+    echo 'Forward'
+    bedtools coverage -counts -a adjusted_hor_strands_full_ranges.bed -b ${SAMPLE}.whole_centromere.1G_XM_90.no_transposons.forward.bam | awk '{if ($7 >= 1) print}' | cut -f5,7 | awk '{sum[$1] += $2} END {for (i in sum) print i, sum[i]}' | sort -k2,2nr
+    echo 'Reverse'
+    bedtools coverage -counts -a adjusted_hor_strands_full_ranges.bed -b ${SAMPLE}.whole_centromere.1G_XM_90.no_transposons.reverse.bam | awk '{if ($7 >= 1) print}' | cut -f5,7 | awk '{sum[$1] += $2} END {for (i in sum) print i, sum[i]}' | sort -k2,2nr
+    echo "DONE for ${SAMPLE} at $(date)"
+done
+
+#!/usr/bin/env bash
+
+echo 'STARTED' at $(date)
+
+SAMPLES=(
+    "MCF7"
+    "HeLaS3"
+    "H9hESC"
+)
+
+for SAMPLE in "${SAMPLES[@]}"
+do
+    echo "Processing ${SAMPLE}"
+
+    bowtie2 \
+        -k 10 \
+        -D 20 \
+        -R 1 \
+        --local \
+        -x /home/pnikitin/cage/bowtie2/t2t_chm13_ref \
+        -U /home/pnikitin/cage/data/${SAMPLE}_L001_R1_001_G_removed.fastq.gz \
+        -p 20 | \
+        samtools view -b - | \
+        samtools sort -@ 20 -O bam -o ${SAMPLE}_bowtie2_G_removed.bam
+
+    echo 'DONE BOWTIE2 for' ${SAMPLE} $(date)
+done
+
+#!/usr/bin/env bash
+
+echo 'STARTED' at $(date)
+
+SAMPLES=(
+    "MCF7"
+    "HeLaS3"
+    "H9hESC"
+)
+
+for SAMPLE in "${SAMPLES[@]}"
+do
+    echo "Processing ${SAMPLE}"
+
+    hisat2 \
+        -k 10 \
+        --max-seeds 20 \
+        -x /home/pnikitin/cage/hisat/t2t_chm13_ref \
+        -U /home/pnikitin/cage/data/${SAMPLE}_L001_R1_001_G_removed.fastq.gz \
+        -p 20 | \
+        samtools view -b - | \
+        samtools sort -@ 20 -O bam -o ${SAMPLE}_hisat_G_removed.bam
+
+    echo 'DONE HISAT for' ${SAMPLE} $(date)
+done
+
+#!/usr/bin/env bash
+
+echo 'STARTED' at $(date)
+
+SAMPLES=(
+    "MCF7"
+    "HeLaS3"
+    "H9hESC"
+)
+
+for SAMPLE in "${SAMPLES[@]}"
+do
+    echo "Processing ${SAMPLE}"
+
+    STAR \
+        --runThreadN 20 \
+        --genomeDir /home/pnikitin/cage/star \
+        --readFilesIn /home/pnikitin/cage/data/${SAMPLE}_L001_R1_001.fastq.gz \
+        --readFilesCommand gunzip -c \
+        --alignEndsType Local \
+        --outSAMunmapped Within \
+        --outFilterMultimapNmax 10 \
+        --winAnchorMultimapNmax 20 \
+        --outSAMmultNmax 1 \
+        --outMultimapperOrder Random \
+        --outFileNamePrefix ${SAMPLE}
+
+    echo 'DONE STAR for' ${SAMPLE} $(date)
+done
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### CAGESCAN
+
+# get_GGG.sh
+#!/usr/bin/env bash
+
+SAMPLES=(
+    FANTOM5EndothelialCellsAortic
+    FANTOM5MammaryEpithelialCell
+    FANTOM5PlacentalEpithelialCells
+    FANTOM5PreadipocyteOmental
+    FANTOM5SkeletalMuscleCells
+    FANTOM5SmallAirwayEpithelialCells
+)
+
+for SAMPLE in "${SAMPLES[@]}"
+do
+    echo "Processing ${SAMPLE}"
+
+    paste <(zcat ${SAMPLE}_L001_R1_001_val_1.fq.gz) <(zcat ${SAMPLE}_L001_R2_001_val_2.fq.gz) | \
+        awk '{if (NR % 4 == 2 && substr($0, 1, 3) == "GGG") { \
+                print last; \
+                print $0; \
+                getline; \
+                print $0; \
+                getline; \
+                print $0; \
+            } else { \
+                last=$0; \
+                } \
+            }' > \
+            ${SAMPLE}.tmp.with_g.tsv
+
+    <${SAMPLE}.tmp.with_g.tsv cut -d$'\t' -f1 > \
+        ${SAMPLE}.with_ggg.R1.fq
+    <${SAMPLE}.tmp.with_g.tsv cut -d$'\t' -f2 > \
+        ${SAMPLE}.with_ggg.R2.fq
+
+    gzip ${SAMPLE}.with_ggg.R1.fq
+    gzip ${SAMPLE}.with_ggg.R2.fq
+
+    echo "DONE getGGG for ${SAMPLE} at $(date)"
+done
+
+# hisat.sh
+
+#!/usr/bin/env bash
+
+echo 'STARTED' at $(date)
+
+conda init 
+conda activate hisat
+
+SAMPLES=(
+    FANTOM5EndothelialCellsAortic
+    FANTOM5MammaryEpithelialCell
+    FANTOM5PlacentalEpithelialCells
+    FANTOM5PreadipocyteOmental
+    FANTOM5SkeletalMuscleCells
+    FANTOM5SmallAirwayEpithelialCells
+)
+
+for SAMPLE in "${SAMPLES[@]}"
+do
+    echo "Processing ${SAMPLE}"
+
+    hisat2 \
+        -x /home/pnikitin/cage/hisat/t2t_chm13_ref \
+        -1 /home/pnikitin/cage/data/cagescan/${SAMPLE}.with_ggg.R1.fq.gz \
+        -2 /home/pnikitin/cage/data/cagescan/${SAMPLE}.with_ggg.R2.fq.gz \
+        -p 20 | \
+        samtools view -b - | \
+        samtools sort -@ 20 -O bam -o ${SAMPLE}_hisat.bam
+    samtools view -h -f 83 -o ${SAMPLE}_hisat_83.bam ${SAMPLE}_hisat.bam
+    samtools view -h -f 99 -o ${SAMPLE}_hisat_99.bam ${SAMPLE}_hisat.bam
+    samtools merge -o ${SAMPLE}_hisat_proper_pair.bam ${SAMPLE}_hisat_83.bam ${SAMPLE}_hisat_99.bam
+    samtools index ${SAMPLE}_hisat_proper_pair.bam
+    rm ${SAMPLE}_hisat_83.bam
+    rm ${SAMPLE}_hisat_99.bam
+
+    echo 'DONE HISAT for' ${SAMPLE} $(date)
+done
+
+# get_remap.sh
+
+#!/usr/bin/env bash
+
+echo 'STARTED' at $(date)
+
+conda init 
+conda activate tools
+
+SAMPLES=(
+    FANTOM5EndothelialCellsAortic
+    FANTOM5MammaryEpithelialCell
+    FANTOM5PlacentalEpithelialCells
+    FANTOM5PreadipocyteOmental
+    FANTOM5SkeletalMuscleCells
+    FANTOM5SmallAirwayEpithelialCells
+)
+
+for SAMPLE in "${SAMPLES[@]}"
+do
+    echo "Processing ${SAMPLE}"
+
+    samtools view -@ 20 -b -f 4 ${SAMPLE}_hisat.bam > ${SAMPLE}.BAM1_u.bam
+
+    samtools view -@ 20 -b -f 1 -F 4 ${SAMPLE}_hisat.bam > ${SAMPLE}.BAM1_m.bam
+
+    bedtools intersect -abam ${SAMPLE}.BAM1_m.bam -b censat_hor_with_strand_R.bed > ${SAMPLE}.BAM1_m_cen.bam
+    bedtools intersect -abam ${SAMPLE}.BAM1_m.bam -b censat_hor_with_strand_R.bed -v > ${SAMPLE}.BAM1_m_noncen.bam
+
+    samtools fastq -@ 20 -1 ${SAMPLE}.BAM1_u_R1.fastq -2 ${SAMPLE}.BAM1_u_R2.fastq -s /dev/null ${SAMPLE}.BAM1_u.bam
+    samtools fastq -@ 20 -1 ${SAMPLE}.BAM1_m_cen_R1.fastq -2 ${SAMPLE}.BAM1_m_cen_R2.fastq -s /dev/null ${SAMPLE}.BAM1_m_cen.bam
+
+    cat ${SAMPLE}.BAM1_m_cen_R1.fastq ${SAMPLE}.BAM1_u_R1.fastq > ${SAMPLE}.BAM1_remap_R1.fastq
+    cat ${SAMPLE}.BAM1_m_cen_R2.fastq ${SAMPLE}.BAM1_u_R2.fastq > ${SAMPLE}.BAM1_remap_R2.fastq
+
+    rm ${SAMPLE}.BAM1_u.bam
+    rm ${SAMPLE}.BAM1_m.bam
+    rm ${SAMPLE}.BAM1_m_cen.bam
+    rm ${SAMPLE}.BAM1_m_noncen.bam
+    rm ${SAMPLE}.BAM1_u_R1.fastq ${SAMPLE}.BAM1_u_R2.fastq
+    rm ${SAMPLE}.BAM1_m_cen_R1.fastq ${SAMPLE}.BAM1_m_cen_R2.fastq
+
+    # Compress final output FASTQ files
+    gzip ${SAMPLE}.BAM1_remap_R1.fastq
+    gzip ${SAMPLE}.BAM1_remap_R2.fastq
+
+    echo 'DONE' ${SAMPLE} $(date)
+done
+
+# hisat_remap.sh
+#!/usr/bin/env bash
+
+echo "STARTED at $(date)"
+
+conda init
+conda activate hisat
+
+SAMPLES=(
+    FANTOM5EndothelialCellsAortic
+    FANTOM5MammaryEpithelialCell
+    FANTOM5PlacentalEpithelialCells
+    FANTOM5PreadipocyteOmental
+    FANTOM5SkeletalMuscleCells
+    FANTOM5SmallAirwayEpithelialCells
+)
+
+for SAMPLE in "${SAMPLES[@]}"
+do
+    echo "Processing ${SAMPLE}"
+
+    hisat2 \
+        -x t2t_whole_centromeres_ref \
+        -1 ${SAMPLE}.BAM1_remap_R1.fastq.gz \
+        -2 ${SAMPLE}.BAM1_remap_R2.fastq.gz \
+        -p 20 \
+        -k 100000 \
+        --max-seeds 500000 | \
+        samtools view -b - | \
+        samtools sort -@ 20 -O bam -o ${SAMPLE}_hisat_whole_centromere_100k_500k.bam
+
+    samtools view -@ 20 -H ${SAMPLE}_hisat_whole_centromere_100k_500k.bam > ${SAMPLE}_header.BAM1_m.sam
+
+    samtools view -@ 20 -F 16 ${SAMPLE}_hisat_whole_centromere_100k_500k.bam | awk -F '\t' 'BEGIN {OFS="\t"} {BASE = substr($10, 1, 3); if ($6 ~ /^1S[0-9]/ && BASE == "GGG") {print $0}}' > ${SAMPLE}_SoftclipGGG_F.BAM1_m.sam
+
+    samtools view -@ 20 -f 16 ${SAMPLE}_hisat_whole_centromere_100k_500k.bam | awk -F '\t' 'BEGIN {OFS="\t"} {ALT = substr($10, length($10)-2, 3); if ($6 ~ /[0-9]M1S$/ && ALT == "CCC") {print $0}}' > ${SAMPLE}_SoftclipGGG_R.BAM1_m.sam
+
+    cat ${SAMPLE}_header.BAM1_m.sam ${SAMPLE}_SoftclipGGG_F.BAM1_m.sam ${SAMPLE}_SoftclipGGG_R.BAM1_m.sam | \
+        samtools sort -@ 20 -O bam -o ${SAMPLE}.BAM1_m_filt.bam
+
+    samtools view -h ${SAMPLE}.BAM1_m_filt.bam | awk 'BEGIN{OFS="\t"} /^@/ {print; next} {match($6, /([0-9]+)M/g, a); totalM=0; for (i in a) totalM+=a[i]; if (totalM/length($10) >= 0.90) print}' | samtools view -b -o ${SAMPLE}.whole_centromere.3G_soft_clip_90pt.bam
+
+    rm ${SAMPLE}_header.BAM1_m.sam
+    rm ${SAMPLE}_SoftclipGGG_F.BAM1_m.sam
+    rm ${SAMPLE}_SoftclipGGG_R.BAM1_m.sam
+
+    samtools index ${SAMPLE}.whole_centromere.3G_soft_clip_90pt.bam
+
+    echo "DONE HISAT for ${SAMPLE} at $(date)"
+
+done
+
+echo "DONE at $(date)"
+
+
+# get5GGGsoftclipBAM.sh
+# Get 5-G-soft-clipped BAM
+
+#!/usr/bin/env bash
+
+echo 'STARTED' at $(date)
+
+conda init
+conda activate tools
+
+SAMPLES=(
+    FANTOM5EndothelialCellsAortic
+    FANTOM5MammaryEpithelialCell
+    FANTOM5PlacentalEpithelialCells
+    FANTOM5PreadipocyteOmental
+    FANTOM5SkeletalMuscleCells
+    FANTOM5SmallAirwayEpithelialCells
+)
+
+for SAMPLE in "${SAMPLES[@]}"
+do
+    echo ${SAMPLE}
+    samtools view -@ 20 -H ${SAMPLE}_hisat_proper_pair.bam > ${SAMPLE}_header.BAM1_m.genes.sam
+
+    samtools view -@ 20 -F 16 ${SAMPLE}_hisat_proper_pair.bam | awk -F '\t' 'BEGIN {OFS="\t"} {BASE = substr($10, 1, 3); if ($6 ~ /^1S[0-9]/ && BASE == "GGG") {print $0}}' > ${SAMPLE}_SoftclipGGG_F.BAM1_m.genes.sam
+
+    samtools view -@ 20 -f 16 ${SAMPLE}_hisat_proper_pair.bam | awk -F '\t' 'BEGIN {OFS="\t"} {ALT = substr($10, length($10)-2, 3); if ($6 ~ /[0-9]M1S$/ && ALT == "CCC") {print $0}}' > ${SAMPLE}_SoftclipGGG_R.BAM1_m.genes.sam
+
+    cat ${SAMPLE}_header.BAM1_m.genes.sam ${SAMPLE}_SoftclipGGG_F.BAM1_m.genes.sam ${SAMPLE}_SoftclipGGG_R.BAM1_m.genes.sam | \
+        samtools sort -@ 20 -O bam -o ${SAMPLE}.BAM_5GGG_soft_clip.initial_map.bam
+
+    rm ${SAMPLE}_header.BAM1_m.genes.sam
+    rm ${SAMPLE}_SoftclipGGG_F.BAM1_m.genes.sam
+    rm ${SAMPLE}_SoftclipGGG_R.BAM1_m.genes.sam
+
+    echo "DONE for ${SAMPLE} at $(date)"
+
+done
+
+# get5coverage.sh
+# Get 5'-coverage bigwig from a bam file
+
+#!/usr/bin/env bash
+
+echo 'STARTED' at $(date)
+
+conda init 
+conda activate bamcov
+
+SAMPLES=(
+    FANTOM5EndothelialCellsAortic
+    FANTOM5MammaryEpithelialCell
+    FANTOM5PlacentalEpithelialCells
+    FANTOM5PreadipocyteOmental
+    FANTOM5SkeletalMuscleCells
+    FANTOM5SmallAirwayEpithelialCells
+)
+
+for SAMPLE in "${SAMPLES[@]}"
+do
+    echo ${SAMPLE}
+    samtools index ${SAMPLE}.BAM_5GGG_soft_clip.initial_map.bam
+    bamCoverage -p 10 -b ${SAMPLE}.BAM_5GGG_soft_clip.initial_map.bam --outFileName ${SAMPLE}.BAM_SoftclipGGG_initial_map_five_prime.bw --binSize 1 --Offset 1
+    # bedtools genomecov с параметрами -bg -strand +[-] -5 -scale
+    echo "DONE for ${SAMPLE} at $(date)"
+done
+
+
+#!/usr/bin/env bash
+
+NUMBERS=("1" "2" "3")
+
+DISTANCES=("0.2" "0.3" "0.4")
+
+for NUMBER in "${NUMBERS[@]}"
+do
+
+    for DISTANCE in "${DISTANCES[@]}"
+    do
+        echo "${NUMBER}_${DISTANCES}"
+    
+done
+
+
+
+
+
+./bowtie_hisat.sh 1 5
+./bowtie_hisat.sh 5 25
+./bowtie_hisat.sh 10 50
+./bowtie_hisat.sh 20 100
+./bowtie_hisat.sh 50 250
+./bowtie_hisat.sh 100 500
+./bowtie_hisat.sh 500 2500
+./bowtie_hisat.sh 1000 5000
+
+./star.sh 1 5
+./star.sh 5 25
+./star.sh 10 50
+./star.sh 20 100
+./star.sh 50 250
+./star.sh 100 500
+./star.sh 500 2500
+./star.sh 1000 5000
+
+
+#!/usr/bin/env bash
+
+echo 'STARTED' at $(date)
+
+nmax=$1
+nmaxfive=$2
+
+SAMPLES=(
+    "reg1"
+    "reg2"
+    "reg3"
+)
+
+for SAMPLE in "${SAMPLES[@]}"
+do
+    echo "Processing ${SAMPLE}"
+
+    bowtie2 \
+        -k ${nmax} \
+        -D ${nmaxfive} \
+        -R 1 \
+        -x bowtie2_${SAMPLE} \
+        -U ${SAMPLE}_simulated.fastq.gz \
+        -p 20 | \
+        samtools view -b - | \
+        samtools sort -@ 20 -O bam -o ${SAMPLE}_${nmax}_${nmaxfive}_bowtie2.bam
+
+    hisat2 \
+        -k ${nmax} \
+        --max-seeds ${nmaxfive} \
+        -x hisat2_${SAMPLE} \
+        -U ${SAMPLE}_simulated.fastq.gz \
+        -p 20 | \
+        samtools view -b - | \
+        samtools sort -@ 20 -O bam -o ${SAMPLE}_${nmax}_${nmaxfive}_hisat.bam
+
+    echo 'DONE BOWTIE2 for' ${SAMPLE} $(date)
+done
+
+#!/usr/bin/env bash
+
+echo 'STARTED' at $(date)
+
+nmax=$1
+nmaxfive=$2
+
+SAMPLES=(
+    "reg1"
+    "reg2"
+    "reg3"
+)
+
+for SAMPLE in "${SAMPLES[@]}"
+do
+    echo "Processing ${SAMPLE}"
+
+    STAR \
+        --runThreadN 20 \
+        --genomeDir star_${SAMPLE} \
+        --readFilesIn ${SAMPLE}_simulated.fastq.gz \
+        --readFilesCommand gunzip -c \
+        --outSAMunmapped Within \
+        --outFilterMultimapNmax ${nmax} \
+        --winAnchorMultimapNmax ${nmaxfive} \
+        --outMultimapperOrder Random \
+        --outFileNamePrefix ${SAMPLE}_${nmax}_${nmaxfive}_star_
+
+    echo 'DONE STAR for' ${SAMPLE} $(date)
+done
+
+--outSAMmultNmax 1 \
+
+samtools flagstat -@ 10 reg3_120_600_hisat.bam | grep "+ 0 mapped ("
+
+samtools view -@ 20 -F 256 reg1_100_500_hisat.bam  -b | samtools view -@ 20 -F 20 - | wc -l
+samtools view -@ 20 -F 256 reg1_100_500_hisat.bam -b | samtools view -@ 20 -f 16 - | wc -l
+
+samtools view -@ 20 -F 20 reg1_300_1500_bowtie2.bam | wc -l
+samtools view -@ 20 -f 16 reg1_300_1500_bowtie2.bam | wc -l
+
+# star.sh
+
+#!/usr/bin/env bash
+
+echo 'STARTED' at $(date)
+
+SAMPLES=(
+    "ArticularChondrocyteKneeJoint"
+    "BCell"
+    "BronchialSmoothMuscleCells"
+    "CD14PositiveMonocyte"
+    "ErythroidProgenitor"
+    "FANTOM6DermalBloodVascularEndothelialCells"
+    "FANTOM6DermalFibroblasts"
+    "FANTOM6DermalLymphaticVascularEndothelialCells"
+    "FibroblastDermisAniso1"
+    "FibroblastDermisAniso2"
+    "GM12878"
+    "H9hESC"
+    "HeLaS3"
+    "HematopoieticProgenitor"
+    "HepG2"
+    "K562"
+    "KeratinocyteFemale"
+    "KeratinocyteProgenitor"
+    "MCF7"
+    "MyeloidProgenitor"
+    "OsteoblastAniso1"
+    "OsteoblastAniso2"
+    "SkeletalMuscleSatelliteAniso1"
+    "SkeletalMuscleSatelliteAniso2"
+    "UmbilicalVeinCytosolicFraction"
+    "VillousMesenchymeAniso1"
+    "VillousMesenchymeAniso2"
+)
+
+for SAMPLE in "${SAMPLES[@]}"
+do
+    echo "Processing ${SAMPLE}"
+
+    STAR \
+        --runThreadN 20 \
+        --genomeDir /home/pnikitin/cage/star \
+        --readFilesIn /home/pnikitin/cage/data/${SAMPLE}_L001_R1_001.fastq.gz \
+        --outSAMtype BAM Unsorted \
+        --readFilesCommand gunzip -c \
+        --alignEndsType Local \
+        --outSAMunmapped Within \
+        --outFilterMultimapNmax 10 \
+        --winAnchorMultimapNmax 20 \
+        --outSAMmultNmax 1 \
+        --outMultimapperOrder Random \
+        --outFileNamePrefix ${SAMPLE}_initial_map_
+
+    echo 'DONE STAR for' ${SAMPLE} $(date)
+done
+
+# get5GsoftclipBAM.sh
+# Get 5-G-soft-clipped BAM
+
+#!/usr/bin/env bash
+
+echo 'STARTED' at $(date)
+
+SAMPLES=(
+    "ArticularChondrocyteKneeJoint"
+    "BCell"
+    "BronchialSmoothMuscleCells"
+    "CD14PositiveMonocyte"
+    "ErythroidProgenitor"
+    "FANTOM6DermalBloodVascularEndothelialCells"
+    "FANTOM6DermalFibroblasts"
+    "FANTOM6DermalLymphaticVascularEndothelialCells"
+    "FibroblastDermisAniso1"
+    "FibroblastDermisAniso2"
+    "GM12878"
+    "H9hESC"
+    "HeLaS3"
+    "HematopoieticProgenitor"
+    "HepG2"
+    "K562"
+    "KeratinocyteFemale"
+    "KeratinocyteProgenitor"
+    "MCF7"
+    "MyeloidProgenitor"
+    "OsteoblastAniso1"
+    "OsteoblastAniso2"
+    "SkeletalMuscleSatelliteAniso1"
+    "SkeletalMuscleSatelliteAniso2"
+    "UmbilicalVeinCytosolicFraction"
+    "VillousMesenchymeAniso1"
+    "VillousMesenchymeAniso2"
+)
+
+for SAMPLE in "${SAMPLES[@]}"
+do
+    echo ${SAMPLE}
+    samtools view -@ 20 -H ${SAMPLE}_initial_map_Aligned.out.bam > ${SAMPLE}_header.BAM.sam
+
+    samtools view -@ 20 -F 20 ${SAMPLE}_initial_map_Aligned.out.bam | awk -F '\t' 'BEGIN {OFS="\t"} {BASE = substr($10, 1, 1); if ($6 ~ /^1S[0-9]/ && BASE == "G") {print $0}}' > ${SAMPLE}_SoftclipG_F.BAM.sam
+
+    samtools view -@ 20 -f 16 ${SAMPLE}_initial_map_Aligned.out.bam | awk -F '\t' 'BEGIN {OFS="\t"} { ALT = substr($10, length($10)-1, 1); if ($6 ~ /[0-9]M1S$/ && ALT == "C") {print $0}}' > ${SAMPLE}_SoftclipG_R.BAM.sam
+
+    cat ${SAMPLE}_header.BAM.sam ${SAMPLE}_SoftclipG_F.BAM.sam ${SAMPLE}_SoftclipG_R.BAM.sam | \
+        samtools sort -@ 20 -O bam -o ${SAMPLE}.BAM_SoftclipG_initial_map.bam
+
+    rm ${SAMPLE}_header.BAM.sam
+    rm ${SAMPLE}_SoftclipG_F.BAM.sam
+    rm ${SAMPLE}_SoftclipG_R.BAM.sam
+
+    echo "DONE for ${SAMPLE} at $(date)"
+done
+
+# xm_filter.sh
+#!/usr/bin/env bash
+
+echo "STARTED at $(date)"
+
+SAMPLES=(
+    "ArticularChondrocyteKneeJoint"
+    "BCell"
+    "BronchialSmoothMuscleCells"
+    "CD14PositiveMonocyte"
+    "ErythroidProgenitor"
+    "FANTOM6DermalBloodVascularEndothelialCells"
+    "FANTOM6DermalFibroblasts"
+    "FANTOM6DermalLymphaticVascularEndothelialCells"
+    "FibroblastDermisAniso1"
+    "FibroblastDermisAniso2"
+    "GM12878"
+    "H9hESC"
+    "HeLaS3"
+    "HematopoieticProgenitor"
+    "HepG2"
+    "K562"
+    "KeratinocyteFemale"
+    "KeratinocyteProgenitor"
+    "MCF7"
+    "MyeloidProgenitor"
+    "OsteoblastAniso1"
+    "OsteoblastAniso2"
+    "SkeletalMuscleSatelliteAniso1"
+    "SkeletalMuscleSatelliteAniso2"
+    "UmbilicalVeinCytosolicFraction"
+    "VillousMesenchymeAniso1"
+    "VillousMesenchymeAniso2"
+)
+
+for SAMPLE in "${SAMPLES[@]}"
+do
+    echo "Processing ${SAMPLE}"
+
+    samtools view -@ 20 -H ${SAMPLE}_bowtie2_centromeres.bam > ${SAMPLE}_header.BAM.sam
+
+    samtools view -@ 20 -F 20 ${SAMPLE}_bowtie2_centromeres.bam | awk -F '\t' 'BEGIN {OFS="\t"} {BASE = substr($10, 1, 1); if ($6 ~ /^1S[0-9]/ && BASE == "G") {print $0}}' > ${SAMPLE}_SoftclipG_F.BAM.sam
+
+    samtools view -@ 20 -f 16 ${SAMPLE}_bowtie2_centromeres.bam | awk -F '\t' 'BEGIN {OFS="\t"} { ALT = substr($10, length($10)-1, 1); if ($6 ~ /[0-9]M1S$/ && ALT == "C") {print $0}}' > ${SAMPLE}_SoftclipG_R.BAM.sam
+
+    cat ${SAMPLE}_header.BAM.sam ${SAMPLE}_SoftclipG_F.BAM.sam ${SAMPLE}_SoftclipG_R.BAM.sam | \
+        samtools sort -@ 20 -O bam -o ${SAMPLE}.BAM_SoftclipG_centromeres.bam
+
+    rm ${SAMPLE}_header.BAM.sam
+    rm ${SAMPLE}_SoftclipG_F.BAM.sam
+    rm ${SAMPLE}_SoftclipG_R.BAM.sam
+
+    samtools view -h ${SAMPLE}.BAM_SoftclipG_centromeres.bam | awk 'BEGIN{OFS="\t"} /^@/ {print; next} {for (i=12; i<=NF; i++) if ($i ~ /^XM:i:/) {split($i, xm, ":"); if (xm[3]/length($10) < 0.10) print; break}}' | samtools view -b -o ${SAMPLE}.whole_centromere.1G_XM_90.bam
+
+    samtools index ${SAMPLE}.whole_centromere.1G_XM_90.bam
+
+    echo "DONE HISAT for ${SAMPLE} at $(date)"
+
+done
+
+echo "DONE at $(date)"
+
+# get5coverage.sh
+# Get 5'-coverage bigwig from a bam file
+
+#!/usr/bin/env bash
+
+echo 'STARTED' at $(date)
+
+SAMPLES=(
+    "ArticularChondrocyteKneeJoint"
+    "BCell"
+    "BronchialSmoothMuscleCells"
+    "CD14PositiveMonocyte"
+    "ErythroidProgenitor"
+    "FANTOM6DermalBloodVascularEndothelialCells"
+    "FANTOM6DermalFibroblasts"
+    "FANTOM6DermalLymphaticVascularEndothelialCells"
+    "FibroblastDermisAniso1"
+    "FibroblastDermisAniso2"
+    "GM12878"
+    "H9hESC"
+    "HeLaS3"
+    "HematopoieticProgenitor"
+    "HepG2"
+    "K562"
+    "KeratinocyteFemale"
+    "KeratinocyteProgenitor"
+    "MCF7"
+    "MyeloidProgenitor"
+    "OsteoblastAniso1"
+    "OsteoblastAniso2"
+    "SkeletalMuscleSatelliteAniso1"
+    "SkeletalMuscleSatelliteAniso2"
+    "UmbilicalVeinCytosolicFraction"
+    "VillousMesenchymeAniso1"
+    "VillousMesenchymeAniso2"
+)
+
+for SAMPLE in "${SAMPLES[@]}"
+do
+    echo ${SAMPLE}
+    samtools index ${SAMPLE}.BAM_SoftclipG_initial_map.bam
+    samtools view -@ 10 -b -F 20 ${SAMPLE}.BAM_SoftclipG_initial_map.bam > ${SAMPLE}.BAM_SoftclipG_initial_map_forward.bam
+    samtools view -@ 10 -b -f 16 ${SAMPLE}.BAM_SoftclipG_initial_map.bam > ${SAMPLE}.BAM_SoftclipG_initial_map_reverse.bam
+    samtools index ${SAMPLE}.BAM_SoftclipG_initial_map_forward.bam
+    samtools index ${SAMPLE}.BAM_SoftclipG_initial_map_reverse.bam
+    bamCoverage -p 10 -b ${SAMPLE}.BAM_SoftclipG_initial_map_forward.bam --outFileName ${SAMPLE}.BAM_SoftclipG_initial_map_five_prime_F.bw --binSize 1 --Offset 1
+    bamCoverage -p 10 -b ${SAMPLE}.BAM_SoftclipG_initial_map_reverse.bam --outFileName ${SAMPLE}.BAM_SoftclipG_initial_map_five_prime_R.bw --binSize 1 --Offset 1
+    # bedtools genomecov с параметрами -bg -strand +[-] -5 -scale
+    echo "DONE for ${SAMPLE} at $(date)"
+done
+
+# get_remap.sh
+
+#!/usr/bin/env bash
+
+echo 'STARTED' at $(date)
+
+SAMPLES=(
+    "ArticularChondrocyteKneeJoint"
+    "BCell"
+    "BronchialSmoothMuscleCells"
+    "CD14PositiveMonocyte"
+    "ErythroidProgenitor"
+    "FANTOM6DermalBloodVascularEndothelialCells"
+    "FANTOM6DermalFibroblasts"
+    "FANTOM6DermalLymphaticVascularEndothelialCells"
+    "FibroblastDermisAniso1"
+    "FibroblastDermisAniso2"
+    "GM12878"
+    "H9hESC"
+    "HeLaS3"
+    "HematopoieticProgenitor"
+    "HepG2"
+    "K562"
+    "KeratinocyteFemale"
+    "KeratinocyteProgenitor"
+    "MCF7"
+    "MyeloidProgenitor"
+    "OsteoblastAniso1"
+    "OsteoblastAniso2"
+    "SkeletalMuscleSatelliteAniso1"
+    "SkeletalMuscleSatelliteAniso2"
+    "UmbilicalVeinCytosolicFraction"
+    "VillousMesenchymeAniso1"
+    "VillousMesenchymeAniso2"
+)
+
+for SAMPLE in "${SAMPLES[@]}"
+do
+    echo "Processing ${SAMPLE}"
+
+    samtools view -@ 20 -b -f 4 ${SAMPLE}_initial_map_Aligned.out.bam > ${SAMPLE}.BAM1_u.bam
+    samtools view -@ 20 -b -F 4 ${SAMPLE}_initial_map_Aligned.out.bam > ${SAMPLE}.BAM1_m.bam
+
+    bedtools intersect -abam ${SAMPLE}.BAM1_m.bam -b censat_hor_with_strand_R.bed > ${SAMPLE}.BAM1_m_cen.bam
+    bedtools intersect -abam ${SAMPLE}.BAM1_m.bam -b censat_hor_with_strand_R.bed -v > ${SAMPLE}.BAM1_m_noncen.bam
+
+    samtools fastq -@ 20 ${SAMPLE}.BAM1_u.bam > ${SAMPLE}.BAM1_u.fastq
+    samtools fastq -@ 20 ${SAMPLE}.BAM1_m_cen.bam > ${SAMPLE}.BAM1_m_filt_cen.fastq
+    cat ${SAMPLE}.BAM1_m_filt_cen.fastq ${SAMPLE}.BAM1_u.fastq > ${SAMPLE}.BAM1_remap_R1.fastq
+    rm ${SAMPLE}.BAM1_u.bam
+    rm ${SAMPLE}.BAM1_m.bam
+    rm ${SAMPLE}.BAM1_m_cen.bam
+    rm ${SAMPLE}.BAM1_m_noncen.bam
+    rm ${SAMPLE}.BAM1_u.fastq
+    rm ${SAMPLE}.BAM1_m_filt_cen.fastq
+    gzip ${SAMPLE}.BAM1_remap_R1.fastq
+
+    echo 'DONE' ${SAMPLE} $(date)
+done
+
+# bowtie2_remap.sh
+#!/usr/bin/env bash
+
+echo 'STARTED' at $(date)
+
+SAMPLES=(
+    "ArticularChondrocyteKneeJoint"
+    "BCell"
+    "BronchialSmoothMuscleCells"
+    "CD14PositiveMonocyte"
+    "ErythroidProgenitor"
+    "FANTOM6DermalBloodVascularEndothelialCells"
+    "FANTOM6DermalFibroblasts"
+    "FANTOM6DermalLymphaticVascularEndothelialCells"
+    "FibroblastDermisAniso1"
+    "FibroblastDermisAniso2"
+    "GM12878"
+    "H9hESC"
+    "HeLaS3"
+    "HematopoieticProgenitor"
+    "HepG2"
+    "K562"
+    "KeratinocyteFemale"
+    "KeratinocyteProgenitor"
+    "MCF7"
+    "MyeloidProgenitor"
+    "OsteoblastAniso1"
+    "OsteoblastAniso2"
+    "SkeletalMuscleSatelliteAniso1"
+    "SkeletalMuscleSatelliteAniso2"
+    "UmbilicalVeinCytosolicFraction"
+    "VillousMesenchymeAniso1"
+    "VillousMesenchymeAniso2"
+)
+
+for SAMPLE in "${SAMPLES[@]}"
+do
+    echo "Processing ${SAMPLE}"
+
+    bowtie2 \
+        -k 800 \
+        -D 1600 \
+        -R 1 \
+        --local \
+        -x /home/pnikitin/cage/bowtie2/t2t_hor_with_strand_centromeres_ref \
+        -U /home/pnikitin/cage/bam_star_bowtie/${SAMPLE}.BAM1_remap_R1.fastq.gz \
+        -p 20 | \
+        samtools view -b - | \
+        samtools sort -@ 20 -O bam -o ${SAMPLE}_bowtie2_centromeres.bam
+
+    echo 'DONE BOWTIE2 for' ${SAMPLE} $(date)
+done
+
+samtools view -@ 20 -F 20 BCell.whole_centromere.1G_XM_90.no_transposons.bam | wc -l
+samtools view -@ 20 -f 16 BCell.whole_centromere.1G_XM_90.no_transposons.bam | wc -l
+
+# filter_transposons.sh
+#!/usr/bin/env bash
+
+echo 'STARTED' at $(date)
+
+SAMPLES=(
+    "ArticularChondrocyteKneeJoint"
+    "BCell"
+    "BronchialSmoothMuscleCells"
+    "CD14PositiveMonocyte"
+    "ErythroidProgenitor"
+    "FANTOM6DermalBloodVascularEndothelialCells"
+    "FANTOM6DermalFibroblasts"
+    "FANTOM6DermalLymphaticVascularEndothelialCells"
+    "FibroblastDermisAniso1"
+    "FibroblastDermisAniso2"
+    "GM12878"
+    "H9hESC"
+    "HeLaS3"
+    "HematopoieticProgenitor"
+    "HepG2"
+    "K562"
+    "KeratinocyteFemale"
+    "KeratinocyteProgenitor"
+    "MCF7"
+    "MyeloidProgenitor"
+    "OsteoblastAniso1"
+    "OsteoblastAniso2"
+    "SkeletalMuscleSatelliteAniso1"
+    "SkeletalMuscleSatelliteAniso2"
+    "UmbilicalVeinCytosolicFraction"
+    "VillousMesenchymeAniso1"
+    "VillousMesenchymeAniso2"
+)
+
+for SAMPLE in "${SAMPLES[@]}"
+do
+    echo "Processing ${SAMPLE}"
+
+    bedtools intersect -a ${SAMPLE}.whole_centromere.1G_XM_90.bam -b adjusted_centromeric_transposons_full_ranges.bed > ${SAMPLE}.transposon.intersected.reads.bam
+    samtools view ${SAMPLE}.transposon.intersected.reads.bam | cut -f1 | sort | uniq > ${SAMPLE}.transposon.intersected.reads.txt
+    samtools view -h ${SAMPLE}.whole_centromere.1G_XM_90.bam | grep -v -F -f ${SAMPLE}.transposon.intersected.reads.txt | samtools view -b -o ${SAMPLE}.whole_centromere.1G_XM_90.no_transposons.bam
+    rm ${SAMPLE}.transposon.intersected.reads.bam
+    rm ${SAMPLE}.transposon.intersected.reads.txt
+
+    echo 'DONE ' ${SAMPLE} $(date)
+done
+
+samtools flagstat ArticularChondrocyteKneeJoint.whole_centromere.1G_XM_90.bam
+
+# get5coverage.sh
+# Get 5'-coverage bigwig from a bam file
+
+#!/usr/bin/env bash
+
+echo 'STARTED' at $(date)
+
+SAMPLES=(
+    "ArticularChondrocyteKneeJoint"
+    "BCell"
+    "BronchialSmoothMuscleCells"
+    "CD14PositiveMonocyte"
+    "ErythroidProgenitor"
+    "FANTOM6DermalBloodVascularEndothelialCells"
+    "FANTOM6DermalFibroblasts"
+    "FANTOM6DermalLymphaticVascularEndothelialCells"
+    "FibroblastDermisAniso1"
+    "FibroblastDermisAniso2"
+    "GM12878"
+    "H9hESC"
+    "HeLaS3"
+    "HematopoieticProgenitor"
+    "HepG2"
+    "K562"
+    "KeratinocyteFemale"
+    "KeratinocyteProgenitor"
+    "MCF7"
+    "MyeloidProgenitor"
+    "OsteoblastAniso1"
+    "OsteoblastAniso2"
+    "SkeletalMuscleSatelliteAniso1"
+    "SkeletalMuscleSatelliteAniso2"
+    "UmbilicalVeinCytosolicFraction"
+    "VillousMesenchymeAniso1"
+    "VillousMesenchymeAniso2"
+)
+
+for SAMPLE in "${SAMPLES[@]}"
+do
+    echo ${SAMPLE}
+    samtools index ${SAMPLE}.whole_centromere.1G_XM_90.no_transposons.bam
+    bamCoverage -p 10 -b ${SAMPLE}.whole_centromere.1G_XM_90.no_transposons.forward.bam --outFileName ${SAMPLE}.whole_centromere.1G_XM_90.no_transposons.F.bw --binSize 1 --Offset 1
+    bamCoverage -p 10 -b ${SAMPLE}.whole_centromere.1G_XM_90.no_transposons.reverse.bam --outFileName ${SAMPLE}.whole_centromere.1G_XM_90.no_transposons.R.bw --binSize 1 --Offset 1
+    bamCoverage -p 10 -b ${SAMPLE}.whole_centromere.1G_XM_90.no_transposons.bam --outFileName ${SAMPLE}.whole_centromere.1G_XM_90.no_transposons.bw --binSize 1 --Offset 1
+    echo "DONE for ${SAMPLE} at $(date)"
+done
+
+# get_monomer_distances_start_end.py
+import pandas as pd
+
+annotation_file = "adjusted_alpha_monomers_full_ranges.bed"
+#annotation_file = "adjusted_hor_strands_full_ranges.bed"
+annotation_df = pd.read_csv(annotation_file, sep='\t', header=None, names=['chrom', 'start', 'end', 'feature', 'strand', 'extra'])
+
+positions_file = "HeLaS3.whole_centromere.1G_XM_90.no_transposons.positions.tsv"
+positions_df = pd.read_csv(positions_file, sep='\t', header=None, names=['chrom', 'pos_start', 'pos_end', 'value'])
+
+results = []
+
+print("Started for loop")
+
+for _, pos_row in positions_df.iterrows():
+    pos = pos_row['pos_start']
+    chrom = pos_row['chrom']
+
+    chrom_annotations = annotation_df[annotation_df['chrom'] == chrom]
+
+    matching_intervals = chrom_annotations[(chrom_annotations['start'] <= pos) & (chrom_annotations['end'] >= pos)]
+
+    if not matching_intervals.empty:
+        interval = matching_intervals.iloc[0]
+        start_dist = abs(pos - interval['start'])
+        end_dist = abs(interval['end'] - pos)
+        results.append([chrom, pos, start_dist, end_dist])
+    else:
+        results.append([chrom, pos, None, None])
+
+output_df = pd.DataFrame(results, columns=['chrom', 'position', 'distance_to_start', 'distance_to_end'])
+output_df.to_csv("HeLaS3.whole_centromere.1G_XM_90.no_transposons.distances.tsv", sep='\t', index=False)
+#output_df.to_csv("HeLaS3.whole_centromere.1G_XM_90.no_transposons.distances.HOR.tsv", sep='\t', index=False)
+
+print("Done distance calculations")
+
+bedtools bamtobed -i HeLaS3.whole_centromere.1G_XM_90.no_transposons.bam | awk '{if ($6 == "+") print $1, $2, $2+1, $4, $5, $6; else print $1, $3-1, $3, $4, $5, $6}' OFS="\t" > HeLaS3.whole_centromere.1G_XM_90.no_transposons_TSS.bed
+
+# filter more than 5 alignments
+# filter_more5_alignments.py
+
+import pysam
+from collections import Counter
+
+bam_file = "input.bam"
+output_bam = "output.bam"
+
+# Open BAM file
+bam = pysam.AlignmentFile(bam_file, "rb")
+
+# Count occurrences of each read name
+read_counts = Counter(read.query_name for read in bam)
+bam.close()
+
+# Keep reads that appear more than 5 times
+filtered_read_names = {name for name, count in read_counts.items() if count > 5}
+
+# Write filtered BAM
+bam = pysam.AlignmentFile(bam_file, "rb")
+out_bam = pysam.AlignmentFile(output_bam, "wb", template=bam)
+
+for read in bam:
+    if read.query_name in filtered_read_names:
+        out_bam.write(read)
+
+bam.close()
+out_bam.close()
+print("Filtering complete!")
+
+# get_monomer_distances_start_end.py
+import pandas as pd
+
+# Load annotation data
+annotation_file = "adjusted_alpha_monomers_full_ranges.bed"
+annotation_df = pd.read_csv(annotation_file, sep='\t', header=None, names=['chrom', 'start', 'end', 'feature', 'strand', 'extra'])
+
+# Load positions data
+positions_file = "HeLaS3.whole_centromere.1G_XM_90.no_transposons.positions.tsv"
+positions_df = pd.read_csv(positions_file, sep='\t', header=None, names=['chrom', 'pos_start', 'pos_end', 'value'])
+
+results = []
+
+print("Started for loop")
+
+for _, pos_row in positions_df.iterrows():
+    pos = pos_row['pos_start']
+    chrom = pos_row['chrom']
+    
+    # Get annotation intervals matching the chromosome
+    chrom_annotations = annotation_df[annotation_df['chrom'] == chrom]
+    
+    # Find the interval containing the position
+    matching_intervals = chrom_annotations[(chrom_annotations['start'] <= pos) & (chrom_annotations['end'] >= pos)]
+    
+    if not matching_intervals.empty:
+        interval = matching_intervals.iloc[0]
+        interval_length = interval['end'] - interval['start']
+        
+        if interval_length > 0:
+            relative_position = (pos - interval['start']) / interval_length
+            results.append([chrom, pos, relative_position])
+        else:
+            results.append([chrom, pos, None])
+    else:
+        results.append([chrom, pos, None])
+
+# Save results as a proportion-based dataset
+output_df = pd.DataFrame(results, columns=['chrom', 'position', 'relative_position'])
+output_df.to_csv("HeLaS3.whole_centromere.1G_XM_90.no_transposons.relative_positions.tsv", sep='\t', index=False)
+
+print("Done relative position calculations")
+
+# metaplot.py
+import pandas as pd
+
+monomers_file = "adjusted_alpha_monomers_full_ranges.bed"
+# monomers_file = "adjusted_hor_strands_full_ranges.bed"
+monomers_df = pd.read_csv(monomers_file, sep='\t', header=None, names=['chrom', 'start', 'end', 'feature', 'strand', 'extra'])
+
+tss_file = "HeLaS3.whole_centromere.1G_XM_90.no_transposons_TSS.bed"
+tss_df = pd.read_csv(tss_file, sep='\t', header=None, names=['chrom', 'tss_start', 'tss_end', 'id', 'score', 'strand'])
+
+results = []
+
+print("Started for loop")
+
+for _, tss_row in tss_df.iterrows():
+    tss_pos = tss_row['tss_start']
+    seq_name = tss_row['chrom']  # Ensure we match with 'chrom' column
+
+    monomer_intervals = monomers_df[monomers_df['chrom'] == seq_name]
+
+    matching_intervals = monomer_intervals[
+        (monomer_intervals['start'] <= tss_pos) & (monomer_intervals['end'] >= tss_pos)
+    ]
+
+    if not matching_intervals.empty:
+        monomer = matching_intervals.iloc[0]
+        monomer_length = monomer['end'] - monomer['start']
+
+        if monomer_length > 0:
+            relative_position = (tss_pos - monomer['start']) / monomer_length
+            results.append([seq_name, tss_pos, monomer['feature'], relative_position])
+        else:
+            results.append([seq_name, tss_pos, monomer['feature'], None])
+    else:
+        results.append([seq_name, tss_pos, None, None])
+
+print("Started saving DF")
+
+metaplot_df = pd.DataFrame(results, columns=['chrom', 'tss_position', 'monomer', 'relative_position'])
+
+metaplot_df.to_csv("HeLaS3.whole_centromere.1G_XM_90.no_transposons.metaplot_tss_monomers.tsv", sep='\t', index=False)
+
+print("DONE")
+
+
+# new version of 5G soft clip
+#!/usr/bin/env bash
+
+echo 'STARTED' at $(date)
+
+SAMPLES=(
+    "HeLaS3"
+)
+
+for SAMPLE in "${SAMPLES[@]}"
+do
+    echo ${SAMPLE}
+    samtools view -@ 20 -H ${SAMPLE}_bowtie2_centromeres.bam > ${SAMPLE}_header.BAM.sam
+
+    samtools view -@ 20 -F 20 ${SAMPLE}_bowtie2_centromeres.bam | awk -F '\t' 'BEGIN {OFS="\t"} {BASE = substr($10, 1, 1); if ($6 ~ /^1S[0-9]/ && BASE == "G") {print $0}}' > ${SAMPLE}_SoftclipG_F.BAM.sam
+
+    samtools view -@ 20 -f 16 ${SAMPLE}_bowtie2_centromeres.bam | \
+        awk -F '\t' 'BEGIN {OFS="\t"} {
+            revseq = $10;
+            revseq = toupper(revseq);
+            revseq = revseq ~ /C$/ ? revseq : "";
+            if ($6 ~ /[0-9]M1S$/ && revseq != "") { print $0 }}' > ${SAMPLE}_SoftclipG_R.BAM.sam
+
+    cat ${SAMPLE}_header.BAM.sam ${SAMPLE}_SoftclipG_F.BAM.sam ${SAMPLE}_SoftclipG_R.BAM.sam | \
+        samtools sort -@ 20 -O bam -o ${SAMPLE}.BAM_SoftclipG_new.bam
+
+    rm ${SAMPLE}_header.BAM.sam
+    rm ${SAMPLE}_SoftclipG_F.BAM.sam
+    rm ${SAMPLE}_SoftclipG_R.BAM.sam
+
+    echo "DONE for ${SAMPLE} at $(date)"
+done
+
+
+
+
+
+I have two BED files. First one adjusted_alpha_monomers_full_ranges.bed. It contains annotations of tandem repeat monomers. Please, do not consider first column as coordinates – this is just a name of sequence. Example:
+chr1:121619170-121625211        0       108     W1      -       nan
+chr1:121619170-121625211        108     279     W5      -       nan
+chr1:121619170-121625211        279     444     W1      -       nan
+chr1:121619170-121625211        446     616     W5      -       nan
+chr1:121619170-121625211        616     783     W1      -       nan
+chr1:121619170-121625211        783     953     W5      -       nan
+chr1:121619170-121625211        954     1125    W4      -       nan
+chr1:121619170-121625211        1126    1296    W3      -       nan
+chr1:121619170-121625211        1298    1467    W4      -       nan
+chr1:121619170-121625211        1468    1638    W3      -       nan
+chr1:121619170-121625211        1640    1809    W2      -       nan
+chr1:121619170-121625211        1810    1976    W1      -       nan
+chr1:121619170-121625211        1976    2147    W5      -       nan
+chr1:121619170-121625211        2147    2316    R2      -       nan
+chr1:121619170-121625211        2316    2483    W1      -       nan
+chr1:121619170-121625211        2483    2656    W5      -       nan
+chr1:121619170-121625211        2656    2826    W4      -       nan
+chr1:121619170-121625211        2827    2997    W3      -       nan
+chr1:121619170-121625211        2999    3154    W4      -       nan
+chr1:121619170-121625211        3155    3325    W3      -       nan
+chr1:121619170-121625211        3327    3496    W2      -       nan
+chr1:121619170-121625211        3497    3663    W1      -       nan
+chr1:121619170-121625211        3663    3834    W5      -       nan
+chr1:121619170-121625211        3834    4003    R2      -       nan
+chr1:121619170-121625211        4003    4170    W1      -       nan
+chr1:121619170-121625211        4170    4341    W5      -       nan
+chr1:121619170-121625211        4341    4511    W4      -       nan
+chr1:121619170-121625211        4512    4680    W3      -       nan
+chr1:121619170-121625211        4682    4850    W4      -       nan
+chr1:121619170-121625211        4853    5022    W3      -       nan
+Second one – HeLaS3.whole_centromere.1G_XM_90.no_transposons_TSS.bed – contains 1 bp transcription start sites (TSS). Example:
+chr1:121619170-121625211        282     283     SRR7641276.2112211         255     -
+chr1:121619170-121625211        3370    3371    SRR7641276.4058108         255     -
+chr1:121619170-121625211        3837    3838    SRR7641276.2112211         255     -
+chr1:121619170-121625211        4930    4931    SRR7641276.14389355        255     +
+Can you create a table for metaplot for each TSS? It means distribution of TSS alongside the monomer, where coordinates would not be an absolute value, but a proportion from 0 to 1, where 1 is the length of the interval
+
+
+
+
+
+
+
+
+
+
+
+
+
+#!/usr/bin/env bash
+
+echo 'STARTED' at $(date)
+
+SAMPLES=(
+    "reg1"
+)
+
+for SAMPLE in "${SAMPLES[@]}"
+do
+    echo ${SAMPLE}
+    samtools view -@ 20 -H ${SAMPLE}_initial_map_Aligned.out.bam > ${SAMPLE}_header.BAM.sam
+
+    samtools view -@ 20 -F 20 ${SAMPLE}_initial_map_Aligned.out.bam | awk -F '\t' 'BEGIN {OFS="\t"} {BASE = substr($10, 1, 1); if ($6 ~ /^1S[0-9]/ && BASE == "G") {print $0}}' > ${SAMPLE}_SoftclipG_F.BAM.sam
+
+    samtools view -@ 20 -f 16 ${SAMPLE}_initial_map_Aligned.out.bam | awk -F '\t' 'BEGIN {OFS="\t"} { ALT = substr($10, length($10)-1, 1); if ($6 ~ /[0-9]M1S$/ && ALT == "C") {print $0}}' > ${SAMPLE}_SoftclipG_R.BAM.sam
+
+    cat ${SAMPLE}_header.BAM.sam ${SAMPLE}_SoftclipG_F.BAM.sam ${SAMPLE}_SoftclipG_R.BAM.sam | \
+        samtools sort -@ 20 -O bam -o ${SAMPLE}.BAM_SoftclipG_initial_map.bam
+
+    rm ${SAMPLE}_header.BAM.sam
+    rm ${SAMPLE}_SoftclipG_F.BAM.sam
+    rm ${SAMPLE}_SoftclipG_R.BAM.sam
+
+    echo "DONE for ${SAMPLE} at $(date)"
+done
+
+
+#!/usr/bin/env bash
+
+echo 'STARTED' at $(date)
+
+SAMPLES=(
+    "reg1"
+)
+
+for SAMPLE in "${SAMPLES[@]}"
+do
+    echo ${SAMPLE}
+    samtools view -@ 20 -H ${SAMPLE}_300_1500_bowtie2.bam > ${SAMPLE}_header.BAM.sam
+
+    samtools view -@ 20 -F 20 ${SAMPLE}_300_1500_bowtie2.bam | \
+        awk -F '\t' 'BEGIN {OFS="\t"} {
+            fwdseq = $10;
+            fwdseq = toupper(fwdseq);
+            fwdseq = fwdseq ~ /^G/ ? fwdseq : "";
+            if ($6 ~ /^1S[0-9]/ && fwdseq != "") { print $0 }}' > ${SAMPLE}_SoftclipG_F.BAM.sam
+
+    samtools view -@ 20 -f 16 ${SAMPLE}_300_1500_bowtie2.bam | \
+        awk -F '\t' 'BEGIN {OFS="\t"} {
+            revseq = $10;
+            revseq = toupper(revseq);
+            revseq = revseq ~ /C$/ ? revseq : "";
+            if ($6 ~ /[0-9]M1S$/ && revseq != "") { print $0 }}' > ${SAMPLE}_SoftclipG_R.BAM.sam
+
+    cat ${SAMPLE}_header.BAM.sam ${SAMPLE}_SoftclipG_F.BAM.sam ${SAMPLE}_SoftclipG_R.BAM.sam | \
+        samtools sort -@ 20 -O bam -o ${SAMPLE}.300_1500.bowtie2.BAM_SoftclipG_new.bam
+
+    rm ${SAMPLE}_header.BAM.sam
+    rm ${SAMPLE}_SoftclipG_F.BAM.sam
+    rm ${SAMPLE}_SoftclipG_R.BAM.sam
+
+    echo "DONE for ${SAMPLE} at $(date)"
+done
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+samtools view -@ 20 -f 16 HeLaS3_initial_map_Aligned.out.bam | \
+awk -F '\t' 'BEGIN {OFS="\t"}
+function revcomp(seq) {
+    gsub("A", "t", seq);
+    gsub("T", "a", seq);
+    gsub("G", "c", seq);
+    gsub("C", "g", seq);
+    n = length(seq);
+    revseq = "";
+    for (i = n; i > 0; i--) {
+        revseq = revseq substr(seq, i, 1);
+    }
+    return toupper(revseq);
+}
+{
+    revseq = revcomp($10);
+    if ($6 ~ /[0-9]M1S$/ && substr(revseq, length(revseq), 1) == "C") {
+        print $0;
+    }
+}' > HeLaS3_SoftclipG_R.BAM.sam
+
+
+
+
+# new G-soft-clip selection in centromeres
+#!/usr/bin/env bash
+
+echo 'STARTED' at $(date)
+
+SAMPLES=(
+    "reg1"
+)
+
+for SAMPLE in "${SAMPLES[@]}"
+do
+    echo ${SAMPLE}
+    samtools view -@ 20 -H ${SAMPLE}_bowtie2_centromeres.bam > ${SAMPLE}_header.BAM.sam
+
+    samtools view -@ 20 -F 20 ${SAMPLE}_bowtie2_centromeres.bam | \
+        awk -F '\t' 'BEGIN {OFS="\t"} {
+            if ($6 ~ /^1S[0-9]+M/) { print $0 }}' > ${SAMPLE}_SoftclipG_F.BAM.sam
+
+    samtools view -@ 20 -f 16 ${SAMPLE}_bowtie2_centromeres.bam | \
+        awk -F '\t' 'BEGIN {OFS="\t"} {
+            if ($6 ~ /[0-9]M1S$/) { print $0 }}' > ${SAMPLE}_SoftclipG_R.BAM.sam
+
+    cat ${SAMPLE}_header.BAM.sam ${SAMPLE}_SoftclipG_F.BAM.sam ${SAMPLE}_SoftclipG_R.BAM.sam | \
+        samtools sort -@ 20 -O bam -o ${SAMPLE}.BAM_SoftclipG_centromeres.bam
+
+    rm ${SAMPLE}_header.BAM.sam
+    rm ${SAMPLE}_SoftclipG_F.BAM.sam
+    rm ${SAMPLE}_SoftclipG_R.BAM.sam
+
+    echo "DONE for ${SAMPLE} at $(date)"
+done
+
+# new G-soft-clip selection in genome
+#!/usr/bin/env bash
+
+echo 'STARTED' at $(date)
+
+SAMPLES=(
+    "ArticularChondrocyteKneeJoint"
+    "BCell"
+    "BronchialSmoothMuscleCells"
+    "CD14PositiveMonocyte"
+    "ErythroidProgenitor"
+    "FANTOM6DermalBloodVascularEndothelialCells"
+    "FANTOM6DermalFibroblasts"
+    "FANTOM6DermalLymphaticVascularEndothelialCells"
+    "FibroblastDermisAniso1"
+    "FibroblastDermisAniso2"
+    "GM12878"
+    "H9hESC"
+    "HeLaS3"
+    "HematopoieticProgenitor"
+    "HepG2"
+    "K562"
+    "KeratinocyteFemale"
+    "KeratinocyteProgenitor"
+    "MCF7"
+    "MyeloidProgenitor"
+    "OsteoblastAniso1"
+    "OsteoblastAniso2"
+    "SkeletalMuscleSatelliteAniso1"
+    "SkeletalMuscleSatelliteAniso2"
+    "UmbilicalVeinCytosolicFraction"
+    "VillousMesenchymeAniso1"
+    "VillousMesenchymeAniso2"
+)
+
+for SAMPLE in "${SAMPLES[@]}"
+do
+    echo ${SAMPLE}
+    samtools view -@ 20 -H ${SAMPLE}_initial_map_Aligned.out.bam > ${SAMPLE}_header.BAM.sam
+
+    samtools view -@ 20 -F 20 ${SAMPLE}_initial_map_Aligned.out.bam | \
+        awk -F '\t' 'BEGIN {OFS="\t"} {
+            if ($6 ~ /^1S[0-9]+M/) { print $0 }}' > ${SAMPLE}_SoftclipG_F.BAM.sam
+
+    samtools view -@ 20 -f 16 ${SAMPLE}_initial_map_Aligned.out.bam | \
+        awk -F '\t' 'BEGIN {OFS="\t"} {
+            if ($6 ~ /[0-9]M1S$/) { print $0 }}' > ${SAMPLE}_SoftclipG_R.BAM.sam
+
+    cat ${SAMPLE}_header.BAM.sam ${SAMPLE}_SoftclipG_F.BAM.sam ${SAMPLE}_SoftclipG_R.BAM.sam | \
+        samtools sort -@ 20 -O bam -o ${SAMPLE}.BAM_SoftclipG_initial_map.bam
+
+    rm ${SAMPLE}_header.BAM.sam
+    rm ${SAMPLE}_SoftclipG_F.BAM.sam
+    rm ${SAMPLE}_SoftclipG_R.BAM.sam
+
+    echo "DONE for ${SAMPLE} at $(date)"
+done
+
+# new wrapper_dinucleotides
+# wrapper_dinucleotides.sh
+
+#!/usr/bin/env bash
+
+echo "STARTED at $(date)"
+
+SAMPLES=(
+    "ArticularChondrocyteKneeJoint"
+    "BCell"
+    "BronchialSmoothMuscleCells"
+    "CD14PositiveMonocyte"
+    "ErythroidProgenitor"
+    "FANTOM6DermalBloodVascularEndothelialCells"
+    "FANTOM6DermalFibroblasts"
+    "FANTOM6DermalLymphaticVascularEndothelialCells"
+    "FibroblastDermisAniso1"
+    "FibroblastDermisAniso2"
+    "GM12878"
+    "H9hESC"
+    "HeLaS3"
+    "HematopoieticProgenitor"
+    "HepG2"
+    "K562"
+    "KeratinocyteFemale"
+    "KeratinocyteProgenitor"
+    "MCF7"
+    "MyeloidProgenitor"
+    "OsteoblastAniso1"
+    "OsteoblastAniso2"
+    "SkeletalMuscleSatelliteAniso1"
+    "SkeletalMuscleSatelliteAniso2"
+    "UmbilicalVeinCytosolicFraction"
+    "VillousMesenchymeAniso1"
+    "VillousMesenchymeAniso2"
+)
+
+REF="t2t-chm13-v2.0.censat_hor_with_strand_R.fa"
+
+for SAMPLE in "${SAMPLES[@]}"
+do
+    echo "Processing ${SAMPLE}"
+
+    BAM="${SAMPLE}.whole_centromere.1G_XM_90.no_transposons.bam"
+    DINUC_OUT="${SAMPLE}_dinucleotide_counts.txt"
+    TABLE_OUT="${SAMPLE}_dinucleotide_table.tsv"
+
+    bash extract_dinucleotides.sh "$BAM" "$REF" "$DINUC_OUT"
+
+    python3 process_dinucleotides.py "$DINUC_OUT" "$TABLE_OUT"
+
+    echo "DONE processing ${SAMPLE} at $(date)"
+done
+
+echo "ALL SAMPLES PROCESSED at $(date)"
+
+# extract_dinucleotides.sh
+#!/usr/bin/env bash
+
+BAM="$1"
+REF="$2"
+OUT="$3"
+
+samtools view -F 4 "$BAM" | gawk '
+function revcomp(base) {
+    if (base == "A") return "T";
+    if (base == "C") return "G";
+    if (base == "G") return "C";
+    if (base == "T") return "A";
+    return base;
+}
+
+function parse_cigar(cigar) {
+    split(cigar, ops, /[0-9]+/)
+    split(cigar, nums, /[A-Z]/)
+
+    mapped_bases = 0
+    soft_clip_start = 0
+
+    for (i = 2; i <= length(ops); i++) {
+        op = ops[i]
+        num = nums[i - 1]
+        # print i, op, num
+        if (op == "S" && mapped_bases == 0) {
+            soft_clip_start = num
+        } else if (op == "M" || op == "N" || op == "D") {
+            mapped_bases += num
+        } else if (op == "I") {
+            mapped_bases += 0
+        }
+    }
+    return mapped_bases
+}
+
+{
+    flag = $2;
+    cigar = $6;
+    seq = $10;
+    pos = $4;
+    chr = $3;
+
+    mapped_bases = parse_cigar(cigar);
+
+    # check out bit operators in awk:
+    # how to check if the 5th bit equals 1
+
+    reverse_strand = (and($2, 16));
+
+    if (reverse_strand) {
+        last_mapped_base = substr(seq, length(seq) - 1, 1);
+        genome_pos = pos + mapped_bases - 1;
+    } else {
+        first_mapped_base = substr(seq, 2, 1);
+        genome_pos = pos;
+    }
+
+    first_mapped_base = toupper(first_mapped_base);
+    last_mapped_base = toupper(last_mapped_base);
+
+    print $1, chr, genome_pos, (reverse_strand ? last_mapped_base : first_mapped_base), reverse_strand;
+}' > first_nucleotides.txt
+
+while read READ CHR POS BASE STRAND; do
+    if [ "$STRAND" -eq 16 ]; then
+        NEXT_POS=$((POS + 1))
+        NEXT_BASE=$(samtools faidx "$REF" "${CHR}:${NEXT_POS}-${NEXT_POS}" | tail -n1 | tr -d '\n' | tr 'acgt' 'ACGT')
+        BASE=$(echo "$BASE" | tr 'acgt' 'ACGT')
+
+        BASE_REV=$(echo "$BASE" | tr "ACGT" "TGCA")
+        NEXT_BASE_REV=$(echo "$NEXT_BASE" | tr "ACGT" "TGCA")
+
+        echo -e "${CHR}\t${POS}\t${NEXT_BASE_REV}${BASE_REV}\t${READ}"
+    else
+        PREV_POS=$((POS - 1))
+        PREV_BASE=$(samtools faidx "$REF" "${CHR}:${PREV_POS}-${PREV_POS}" | tail -n1 | tr -d '\n' | tr 'acgt' 'ACGT')
+        BASE=$(echo "$BASE" | tr 'acgt' 'ACGT')
+
+        echo -e "${CHR}\t${POS}\t${PREV_BASE}${BASE}\t${READ}"
+    fi
+done < first_nucleotides.txt > "$OUT"
+
+# process_dinucleotides.py
+import pandas as pd
+import sys
+import os
+
+input_file = sys.argv[1]  # dinucleotide_counts.txt
+output_file = sys.argv[2]  # dinucleotide_table.tsv
+
+if not os.path.exists(input_file) or os.stat(input_file).st_size == 0:
+    print(f"Warning: Input file {input_file} is empty. No output generated.")
+    sys.exit(1)
+
+dinuc_data = pd.read_csv(input_file, sep="\t", names=["dinucleotide", "read"])
+
+df_counts = dinuc_data.groupby(["dinucleotide", "read"]).size().unstack(fill_value=0)
+
+df_counts.to_csv(output_file, sep="\t")
+
+print(f"Dinucleotide frequency table saved to {output_file}")
+
+
+
+
+
+
+# wrapper_initiators.sh
+
+#!/usr/bin/env bash
+
+echo "STARTED at $(date)"
+
+SAMPLES=(
+    "ArticularChondrocyteKneeJoint"
+    "BCell"
+    "BronchialSmoothMuscleCells"
+    "CD14PositiveMonocyte"
+    "ErythroidProgenitor"
+    "FANTOM6DermalBloodVascularEndothelialCells"
+    "FANTOM6DermalFibroblasts"
+    "FANTOM6DermalLymphaticVascularEndothelialCells"
+    "FibroblastDermisAniso1"
+    "FibroblastDermisAniso2"
+    "GM12878"
+    "H9hESC"
+    "HeLaS3"
+    "HematopoieticProgenitor"
+    "HepG2"
+    "K562"
+    "KeratinocyteFemale"
+    "KeratinocyteProgenitor"
+    "MCF7"
+    "MyeloidProgenitor"
+    "OsteoblastAniso1"
+    "OsteoblastAniso2"
+    "SkeletalMuscleSatelliteAniso1"
+    "SkeletalMuscleSatelliteAniso2"
+    "UmbilicalVeinCytosolicFraction"
+    "VillousMesenchymeAniso1"
+    "VillousMesenchymeAniso2"
+)
+
+REF="t2t-chm13-v2.0.censat_hor_with_strand_R.fa"
+
+for SAMPLE in "${SAMPLES[@]}"
+do
+    echo "Processing ${SAMPLE}"
+
+    BAM="${SAMPLE}.whole_centromere.1G_XM_90.no_transposons.bam"
+    INIT_OUT="${SAMPLE}_initiators.bed"
+
+    bash extract_initiators.sh "$BAM" "$REF" "$INIT_OUT"
+
+    echo "DONE processing ${SAMPLE} at $(date)"
+done
+
+echo "ALL SAMPLES PROCESSED at $(date)"
+
+# extract_initiators.sh
+#!/usr/bin/env bash
+
+BAM="$1"
+REF="$2"
+OUT="$3"
+
+samtools view -F 4 "$BAM" | gawk '
+function revcomp(base) {
+    if (base == "A") return "T";
+    if (base == "C") return "G";
+    if (base == "G") return "C";
+    if (base == "T") return "A";
+    return base;
+}
+
+function parse_cigar(cigar) {
+    split(cigar, ops, /[0-9]+/)
+    split(cigar, nums, /[A-Z]/)
+
+    mapped_bases = 0
+    soft_clip_start = 0
+
+    for (i = 2; i <= length(ops); i++) {
+        op = ops[i]
+        num = nums[i - 1]
+        # print i, op, num
+        if (op == "S" && mapped_bases == 0) {
+            soft_clip_start = num
+        } else if (op == "M" || op == "N" || op == "D") {
+            mapped_bases += num
+        } else if (op == "I") {
+            mapped_bases += 0
+        }
+    }
+    return mapped_bases
+}
+
+{
+    flag = $2;
+    cigar = $6;
+    seq = $10;
+    pos = $4;
+    chr = $3;
+
+    mapped_bases = parse_cigar(cigar);
+
+    # check out bit operators in awk:
+    # how to check if the 5th bit equals 1
+
+    reverse_strand = (and($2, 16));
+
+    if (reverse_strand) {
+        last_mapped_base = substr(seq, length(seq) - 1, 1);
+        genome_pos = pos + mapped_bases - 1;
+    } else {
+        first_mapped_base = substr(seq, 2, 1);
+        genome_pos = pos;
+    }
+
+    first_mapped_base = toupper(first_mapped_base);
+    last_mapped_base = toupper(last_mapped_base);
+
+    print $1, chr, genome_pos, (reverse_strand ? last_mapped_base : first_mapped_base), reverse_strand;
+}' > first_nucleotides.txt
+
+while read READ CHR POS BASE STRAND; do
+    if [ "$STRAND" -eq 16 ]; then
+        NEXT_POS=$((POS + 1))
+        PREV_POS=$((POS - 1))
+
+        NEXT_BASE=$(samtools faidx "$REF" "${CHR}:${NEXT_POS}-${NEXT_POS}" | tail -n1 | tr -d '\n' | tr 'acgt' 'ACGT')
+        BASE=$(echo "$BASE" | tr 'acgt' 'ACGT')
+
+        BASE_REV=$(echo "$BASE" | tr "ACGT" "TGCA")
+        NEXT_BASE_REV=$(echo "$NEXT_BASE" | tr "ACGT" "TGCA")
+
+        echo -e "${CHR}\t${PREV_POS}\t${POS}\t${READ}\t*\t+\t${NEXT_BASE_REV}${BASE_REV}"
+    else
+        PREV_POS=$((POS - 1))
+        PREV_BASE=$(samtools faidx "$REF" "${CHR}:${PREV_POS}-${PREV_POS}" | tail -n1 | tr -d '\n' | tr 'acgt' 'ACGT')
+        BASE=$(echo "$BASE" | tr 'acgt' 'ACGT')
+        echo -e "${CHR}\t${PREV_POS}\t${POS}\t${READ}\t*\t-\t${PREV_BASE}${BASE}"
+    fi
+done < first_nucleotides.txt > "$OUT"
+
+
+# extract_stable_initiators.sh
+#!/usr/bin/env bash
+
+READ_LIST="stable_dinucleotides_reads.tsv"
+
+for BEDFILE in *_initiators.bed; do
+    SAMPLE_NAME="${BEDFILE%_initiators.bed}"
+
+    awk -v sample="$SAMPLE_NAME" '$1 == sample { print $2 }' "$READ_LIST" > "${SAMPLE_NAME}_reads.tmp"
+
+    awk 'NR==FNR { keep[$1]; next } $4 in keep' "${SAMPLE_NAME}_reads.tmp" "$BEDFILE" > "${SAMPLE_NAME}_stable_initiators.bed"
+
+    echo "Filtered: $BEDFILE -> ${SAMPLE_NAME}_stable_initiators.bed"
+
+    rm "${SAMPLE_NAME}_reads.tmp"
+done
+
+# calculate_transposons_and_monomers.sh
+#!/usr/bin/env bash
+
+echo "STARTED at $(date)"
+
+SAMPLES=(
+    "GM12878"
+    "H9hESC"
+    "HeLaS3"
+    "HepG2"
+    "K562"
+    "KeratinocyteProgenitor"
+    "MCF7"
+    "MyeloidProgenitor"
+)
+
+for SAMPLE in "${SAMPLES[@]}"
+do
+    bedtools intersect -wa -wb -a adjusted_alpha_monomers_full_ranges.bed -b ${SAMPLE}_stable_initiators.bed | awk -v sample="$SAMPLE" '{print sample"\t"$1"\t"$2"\t"$3"\t"$4"\t"$5"\t"$7"\t"$8"\t"$9"\t"$10"\t"$12}' >> stable_reads_intersected.tsv
+done
+
+echo "ALL SAMPLES PROCESSED at $(date)"
+
+# CAGEr RDS file create
+
+conda create -n cager \
+  -c bioconda -c conda-forge \
+  r-base=4.3 \
+  bioconductor-cager \
+  bioconductor-rtracklayer \
+  bioconductor-bsgenome \
+  r-optparse \
+  r-tidyverse
+
+install.packages("BSgenome.Hsapiens.NCBI.T2T.CHM13v2.0_1.5.0.tar.gz", repos = NULL, type = "source")
+
+library(CAGEr)
+library(BSgenome.Hsapiens.NCBI.T2T.CHM13v2.0)
+
+seqlevelsStyle(BSgenome.Hsapiens.NCBI.T2T.CHM13v2.0) = "UCSC"
+
+bam_dir = "/home/pnikitin/cage/cager_analysis"
+bam_files = list.files(bam_dir, pattern = "\\.bam$", full.names = TRUE)
+
+sample_names = sub("\\.BAM.*$", "", basename(bam_files))
+
+ce = CAGEexp(genomeName     = "BSgenome.Hsapiens.NCBI.T2T.CHM13v2.0",
+             inputFiles     = bam_files,
+             inputFilesType = "bam",
+             sampleLabels   = sample_names)
+
+ce = getCTSS(ce, removeFirstG = T, useMulticore = T, nrCores = 10)
+ce = getCTSS(ce, removeFirstG = T, useMulticore = F)
+
+saveRDS(ce, file = "CAGEexp_T2T_CHM13.RDS")
+
+star_TSS = readRDS("CAGEexp_T2T_CHM13.RDS")
+star_TSS = normalizeTagCount(star_TSS, method = "simpleTpm")
+saveRDS(star_TSS, file = "CAGEexp_T2T_CHM13_TPM_.RDS")
+star_TSS = clusterCTSS(star_TSS, threshold = 1, thresholdIsTpm = TRUE)
+saveRDS(star_TSS, file = "CAGEexp_T2T_CHM13_TPM_clustered.RDS")
+star_TSS = aggregateTagClusters(star_TSS, tpmThreshold = 1)
+saveRDS(star_TSS, file = "CAGEexp_T2T_CHM13_TPM_clustered_agg.RDS")
+star_TSS = calcDominantTSS(star_TSS)
+
